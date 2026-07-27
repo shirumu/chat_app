@@ -205,7 +205,7 @@
 
         /* サイドバー（カレンダー・ToDo） */
         .sidebar-panel {
-            width: 360px;
+            width: 380px;
             display: flex;
             flex-direction: column;
             gap: 15px;
@@ -232,6 +232,79 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        /* 月間カレンダーグリッドスタイル */
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .calendar-day-header {
+            font-weight: bold;
+            font-size: 0.75rem;
+            padding: 4px 0;
+            color: var(--primary-color);
+        }
+
+        .calendar-day {
+            padding: 6px 2px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            min-height: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background: var(--model-msg-bg);
+        }
+
+        .calendar-day.selected {
+            border: 2px solid var(--primary-color);
+            font-weight: bold;
+            background: var(--model-msg-bg);
+        }
+
+        .calendar-day.today {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .calendar-day.has-event::after {
+            content: '';
+            width: 5px;
+            height: 5px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            margin-top: 2px;
+        }
+
+        .selected-date-box {
+            background: var(--card-bg);
+            border: 1px dashed var(--border-color);
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
         }
 
         /* チャットエリア */
@@ -285,7 +358,7 @@
             font-weight: bold;
         }
 
-        /* 💡 入力エリア（縦をゆったり確保） */
+        /* 入力エリア */
         .input-area {
             padding: 12px;
             background: var(--panel-bg);
@@ -305,7 +378,7 @@
             background: var(--card-bg);
             color: var(--text-color);
             resize: vertical;
-            height: 90px; /* 広めの初期高さ */
+            height: 90px;
             min-height: 60px;
             font-family: inherit;
             box-sizing: border-box;
@@ -320,7 +393,7 @@
             cursor: pointer;
             font-weight: bold;
             transition: background 0.2s;
-            height: 90px; /* 入力欄と揃えたボタン高さ */
+            height: 90px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -367,7 +440,7 @@
             list-style: none;
             padding: 0;
             margin: 0;
-            max-height: 200px;
+            max-height: 180px;
             overflow-y: auto;
         }
 
@@ -431,7 +504,7 @@
             gap: 8px;
         }
 
-        /* 📱 レスポンシブ (スマホ向け調整: 縦スクロール型で広々配置) */
+        /* 📱 レスポンシブ (スマホ向け調整) */
         @media (max-width: 850px) {
             body {
                 padding: 6px;
@@ -456,14 +529,16 @@
                 width: 100%;
                 overflow-y: visible;
             }
+            /* 💡 スマホ時：チャットログを縦に広々スクロール表示 */
             .chat-area {
-                height: 550px; /* スマホでもしっかり高さを確保 */
+                height: 75vh;
+                min-height: 550px;
             }
             .input-area textarea {
-                height: 70px;
+                height: 75px;
             }
             .btn-main {
-                height: 70px;
+                height: 75px;
             }
         }
     </style>
@@ -502,34 +577,54 @@
                     <!-- サイドバー（カレンダー & ToDo） -->
                     <div class="sidebar-panel">
                         
-                        <!-- カレンダーカード -->
+                        <!-- 月間カレンダー ＆ リマインダーカード -->
                         <div class="dashboard-card">
-                            <div class="card-title">📅 予定・リマインダー</div>
-                            <div class="form-group">
-                                <input type="text" id="eventTitle" placeholder="予定のタイトル">
+                            <div class="card-title">📅 月間カレンダー</div>
+                            
+                            <!-- カレンダーヘッダーナビ -->
+                            <div class="calendar-nav">
+                                <button class="btn-sub" onclick="changeMonth(-1)">◀ 前月</button>
+                                <span id="calendarTitle">2026年 7月</span>
+                                <button class="btn-sub" onclick="changeMonth(1)">翌月 ▶</button>
                             </div>
-                            <div class="form-row">
+
+                            <!-- 月曜始まりカレンダーグリッド -->
+                            <div class="calendar-grid" id="calendarGrid"></div>
+
+                            <!-- 選択した日付の予定表示エリア -->
+                            <div class="selected-date-box">
+                                <div style="font-weight:bold; margin-bottom:5px;" id="selectedDateTitle">📌 日付を選択してください</div>
+                                <ul id="selectedDateEventList" style="list-style:none; padding:0; margin:0;"></ul>
+                            </div>
+
+                            <!-- 予定追加フォーム -->
+                            <div style="border-top: 1px dashed var(--border-color); padding-top:8px; margin-top:4px;">
+                                <div style="font-weight:bold; font-size:0.8rem; margin-bottom:6px;">＋ 予定を追加</div>
                                 <div class="form-group">
-                                    <input type="date" id="eventDate">
+                                    <input type="text" id="eventTitle" placeholder="予定のタイトル">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <input type="date" id="eventDate">
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="time" id="eventTime">
+                                    </div>
                                 </div>
                                 <div class="form-group">
-                                    <input type="time" id="eventTime">
+                                    <label>⏰ 通知タイミング:</label>
+                                    <select id="eventRemind">
+                                        <option value="0">時間ぴったり</option>
+                                        <option value="5">5分前</option>
+                                        <option value="10">10分前</option>
+                                        <option value="15">15分前</option>
+                                        <option value="30">30分前</option>
+                                        <option value="60">1時間前</option>
+                                        <option value="-1">リマインドなし</option>
+                                    </select>
                                 </div>
+                                <button class="btn-main" style="height: auto; padding: 8px; width:100%;" onclick="addEvent()">予定を追加保存</button>
                             </div>
-                            <div class="form-group">
-                                <label>⏰ 通知タイミング:</label>
-                                <select id="eventRemind">
-                                    <option value="0">時間ぴったり</option>
-                                    <option value="5">5分前</option>
-                                    <option value="10">10分前</option>
-                                    <option value="15">15分前</option>
-                                    <option value="30">30分前</option>
-                                    <option value="60">1時間前</option>
-                                    <option value="-1">リマインドなし</option>
-                                </select>
-                            </div>
-                            <button class="btn-main" style="margin-bottom:10px; height: auto; padding: 8px;" onclick="addEvent()">予定を追加</button>
-                            <ul id="eventList" class="item-list"></ul>
                         </div>
 
                         <!-- やることリストカード -->
@@ -595,11 +690,24 @@
             </div>
 
             <!-- 3. API接続設定タブ -->
-            <div id="basic-tab" class="tab-content" style="flex-direction:column; max-width:500px;">
+            <div id="basic-tab" class="tab-content" style="flex-direction:column; max-width:600px;">
                 <div class="card-title" style="font-size:1.1rem;">⚙️ API 接続設定</div>
+                
+                <!-- Google AI Studio 誘導カード -->
+                <div class="cat-box" style="margin-top:10px;">
+                    <h3>🔑 Gemini APIキーの取得方法</h3>
+                    <p style="font-size: 0.85rem; line-height: 1.6; margin-bottom: 12px;">
+                        Gemini APIキーは Google AI Studio にて無料で即時発行いただけますわ。<br>
+                        下記ボタンよりページを開き、画面内または左側メニューにある <strong>「Get API key」</strong> ボタンからキーを生成してコピーなさってくださいませ。
+                    </p>
+                    <a href="https://aistudio.google.com/prompts/new_chat" target="_blank" rel="noopener noreferrer" class="btn-main" style="text-decoration: none; display: inline-flex; height: auto; padding: 10px 16px; font-size:0.9rem;">
+                        🌐 Google AI Studio を開く (外部ページ) ↗
+                    </a>
+                </div>
+
                 <div class="form-group" style="margin-top:10px;">
                     <label>Gemini APIキー:</label>
-                    <input type="password" id="apiKeyInput" placeholder="APIキーを入力">
+                    <input type="password" id="apiKeyInput" placeholder="AI Studioで取得したAPIキーを貼り付け">
                 </div>
                 <div class="form-group">
                     <label>使用モデル名:</label>
@@ -652,15 +760,17 @@
         let chatLogs = [];
         let calendarEvents = [];
         let todoList = [];
+        let currentViewDate = new Date(); // カレンダー表示用日付
+        let selectedDateStr = '';         // 選択中の日付 (YYYY-MM-DD)
 
         window.onload = function() {
             loadSavedData();
             buildQuestionsUI();
-            renderCalendar();
+            renderMonthCalendar();
             renderTodo();
             renderChatLogs();
 
-            // 10秒ごとにリマインダーをチェック
+            // 10秒ごとにリマインダーチェック
             setInterval(checkReminders, 10000);
         };
 
@@ -698,13 +808,20 @@
             todoList = JSON.parse(localStorage.getItem('geminiTodoList') || '[]');
             chatLogs = JSON.parse(localStorage.getItem('geminiChatLogs') || '[]');
 
-            // チャット初期メッセージがない場合のデフォルト
+            // 本日の日付を選択初期値に設定
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            selectedDateStr = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('eventDate').value = selectedDateStr;
+
             if (chatLogs.length === 0) {
                 const userCall = localStorage.getItem('geminiCharUserCall') || 'ご主人様';
                 chatLogs.push({
                     sender: 'model',
                     name: charName,
-                    text: `${userCall}、準備が整いましたわ。カレンダーやToDoの確認、あるいは何なりとお話しくださいませ。`
+                    text: `${userCall}、準備が整いましたわ。月間カレンダーやToDoの確認、あるいは何なりとお話しくださいませ。`
                 });
                 saveChatLogs();
             }
@@ -761,10 +878,112 @@
                 if (val) answers[key] = val;
             });
             localStorage.setItem('geminiCharAnswers', JSON.stringify(answers));
-            alert('✨ プロファイルと呼称設定をすべて保存・反映いたしましたわ！');
+            alert('✨ プロファイルと呼称設定を保存・反映いたしましたわ！');
         }
 
-        // --- カレンダー & リマインダー ---
+        // --- 📅 月曜始まり 月間カレンダー ---
+        function changeMonth(delta) {
+            currentViewDate.setMonth(currentViewDate.getMonth() + delta);
+            renderMonthCalendar();
+        }
+
+        function renderMonthCalendar() {
+            const year = currentViewDate.getFullYear();
+            const month = currentViewDate.getMonth();
+
+            document.getElementById('calendarTitle').innerText = `${year}年 ${month + 1}月`;
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            // 月曜始まりの曜日ヘッダー
+            const weekHeaders = ['月', '火', '水', '木', '金', '土', '日'];
+            weekHeaders.forEach(h => {
+                const div = document.createElement('div');
+                div.className = 'calendar-day-header';
+                div.innerText = h;
+                grid.appendChild(div);
+            });
+
+            // 月の初日と最終日を取得
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+
+            // 月曜始まりインデックス計算 (Sun:0, Mon:1 -> Mon:0, ..., Sun:6)
+            let startDayIndex = (firstDay.getDay() + 6) % 7;
+            const totalDays = lastDay.getDate();
+
+            // パディング（前月の空白）
+            for (let i = 0; i < startDayIndex; i++) {
+                const emptyCell = document.createElement('div');
+                grid.appendChild(emptyCell);
+            }
+
+            // 本日の日付文字列
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            // 日付セル生成
+            for (let day = 1; day <= totalDays; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day';
+                cell.innerText = day;
+
+                if (dateStr === todayStr) cell.classList.add('today');
+                if (dateStr === selectedDateStr) cell.classList.add('selected');
+
+                // 予定が存在するかチェック
+                if (calendarEvents.some(e => e.date === dateStr)) {
+                    cell.classList.add('has-event');
+                }
+
+                cell.onclick = () => selectDate(dateStr);
+                grid.appendChild(cell);
+            }
+
+            renderSelectedDateEvents();
+        }
+
+        function selectDate(dateStr) {
+            selectedDateStr = dateStr;
+            document.getElementById('eventDate').value = dateStr;
+            renderMonthCalendar();
+        }
+
+        function renderSelectedDateEvents() {
+            const titleEl = document.getElementById('selectedDateTitle');
+            const listEl = document.getElementById('selectedDateEventList');
+            listEl.innerHTML = '';
+
+            if (!selectedDateStr) {
+                titleEl.innerText = '📌 日付を選択してください';
+                return;
+            }
+
+            titleEl.innerText = `📌 ${selectedDateStr} の予定一覧`;
+            const dayEvents = calendarEvents.filter(e => e.date === selectedDateStr);
+
+            if (dayEvents.length === 0) {
+                listEl.innerHTML = '<li style="color:#888; font-size:0.8rem;">予定はありません。</li>';
+                return;
+            }
+
+            dayEvents.forEach(e => {
+                const li = document.createElement('li');
+                li.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-top:4px; padding:4px; background:var(--panel-bg); border-radius:4px;';
+                const remindText = e.remindMinutes === -1 ? '' : (e.remindMinutes === 0 ? ' [通知:時間通り]' : ` [通知:${e.remindMinutes}分前]`);
+                li.innerHTML = `
+                    <div>
+                        <strong>${e.time ? escapeHtml(e.time) : '終日'}</strong> ${escapeHtml(e.title)}
+                        <span style="font-size:0.75rem; opacity:0.7;">${remindText}</span>
+                    </div>
+                    <button class="btn-danger" onclick="deleteEvent(${e.id})">削除</button>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+
         function addEvent() {
             const title = document.getElementById('eventTitle').value.trim();
             const date = document.getElementById('eventDate').value;
@@ -784,39 +1003,18 @@
 
             calendarEvents.sort((a,b) => new Date(a.date + ' ' + (a.time||'00:00')) - new Date(b.date + ' ' + (b.time||'00:00')));
             localStorage.setItem('geminiCalendarEvents', JSON.stringify(calendarEvents));
-            renderCalendar();
+            
+            selectedDateStr = date;
+            renderMonthCalendar();
 
             document.getElementById('eventTitle').value = '';
-            document.getElementById('eventDate').value = '';
             document.getElementById('eventTime').value = '';
         }
 
         function deleteEvent(id) {
             calendarEvents = calendarEvents.filter(e => e.id !== id);
             localStorage.setItem('geminiCalendarEvents', JSON.stringify(calendarEvents));
-            renderCalendar();
-        }
-
-        function renderCalendar() {
-            const list = document.getElementById('eventList');
-            list.innerHTML = '';
-            if (calendarEvents.length === 0) {
-                list.innerHTML = '<li style="color:#888; font-size:0.8rem;">予定はありません。</li>';
-                return;
-            }
-            calendarEvents.forEach(e => {
-                const li = document.createElement('li');
-                li.className = 'item-card';
-                const remindText = e.remindMinutes === -1 ? '' : (e.remindMinutes === 0 ? ' [通知:時間通り]' : ` [通知:${e.remindMinutes}分前]`);
-                li.innerHTML = `
-                    <div>
-                        <strong>📅 ${escapeHtml(e.date)} ${e.time ? escapeHtml(e.time) : ''}</strong>
-                        <div>${escapeHtml(e.title)} <span style="font-size:0.75rem; opacity:0.7;">${remindText}</span></div>
-                    </div>
-                    <button class="btn-danger" onclick="deleteEvent(${e.id})">削除</button>
-                `;
-                list.appendChild(li);
-            });
+            renderMonthCalendar();
         }
 
         function checkReminders() {
