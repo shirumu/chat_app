@@ -863,7 +863,7 @@
             localStorage.setItem('geminiApiKey', key);
         }
 
-        // Gemini API呼び出し（レートリミット時の親切なエラー表示に対応）
+        // Gemini API呼び出し関数
 async function callGeminiAPI(userMessage) {
     const apiKey = localStorage.getItem('geminiApiKey');
     if (!apiKey) {
@@ -898,7 +898,8 @@ ${advancedSettings.speechCustom ? `語尾等の特徴: ${advancedSettings.speech
     contents.push({ role: 'user', parts: [{ text: userMessage }] });
 
     try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, { ... });`, {
+        // モデル名を現在安定動作する「gemini-2.5-flash」に設定しております
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents })
@@ -906,12 +907,9 @@ ${advancedSettings.speechCustom ? `語尾等の特徴: ${advancedSettings.speech
 
         if (!res.ok) {
             const err = await res.json();
-            
-            // レートリミット（429エラー）発生時の分かりやすい案内
             if (res.status === 429 || err.error?.message?.includes('Quota exceeded')) {
                 return '⚠️ 無料枠の送信回数制限に達しました。約1分間待ってから再度メッセージを送信してください。';
             }
-            
             return `APIエラー: ${err.error?.message || 'エラーが発生しました'}`;
         }
 
