@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キャラクターチャット with カレンダー</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #2d5016;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            height: 90vh;
+        }
+
+        .main-content {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(45, 80, 22, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 2px solid #81c784;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+            color: white;
+            padding: 20px;
+            border-bottom: 3px solid #388e3c;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f1f8e9 100%);
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 15px;
+            border-radius: 15px;
+            word-wrap: break-word;
+            line-height: 1.4;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%);
+            color: white;
+            border-bottom-right-radius: 3px;
+        }
+
+        .message.bot .message-content {
+            background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+            color: #1b5e20;
+            border-bottom-left-radius: 3px;
+            border: 1px solid #81c784;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #558b2f;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .input-area {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            border-top: 2px solid #81c784;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #81c784;
+            border-radius: 25px;
+            font-size: 14px;
+            background: white;
+            color: #2d5016;
+            transition: all 0.3s ease;
+        }
+
+        .input-area input:focus {
+            outline: none;
+            border-color: #66bb6a;
+            box-shadow: 0 0 10px rgba(102, 187, 106, 0.3);
+        }
+
+        .input-area input::placeholder {
+            color: #a5d6a7;
+        }
+
+        .send-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .send-btn:hover {
+            background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .calendar-section {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(45, 80, 22, 0.15);
+            border: 2px solid #81c784;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .calendar-title {
+            color: #1b5e20;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #81c784;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .day-name {
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
+            color: #2d5016;
+            padding: 5px;
+        }
+
+        .calendar-day {
+            text-align: center;
+            padding: 8px;
+            background: white;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #c8e6c9;
+            color: #2d5016;
+        }
+
+        .calendar-day:hover {
+            background: #c8e6c9;
+            transform: scale(1.05);
+        }
+
+        .calendar-day.today {
+            background: #66bb6a;
+            color: white;
+            font-weight: bold;
+        }
+
+        .calendar-day.has-event {
+            background: #a5d6a7;
+            color: white;
+            font-weight: bold;
+        }
+
+        .event-input-section {
+            background: white;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #81c784;
+            margin-top: 10px;
+        }
+
+        .event-input-section input,
+        .event-input-section select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #a5d6a7;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #2d5016;
+        }
+
+        .event-input-section button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 8px;
+            background: #66bb6a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .event-input-section button:hover {
+            background: #4caf50;
+        }
+
+        .event-list {
+            margin-top: 10px;
+        }
+
+        .event-item {
+            background: #f1f8e9;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border-left: 3px solid #66bb6a;
+            font-size: 11px;
+            color: #1b5e20;
+        }
+
+        .event-item-title {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .event-item-time {
+            color: #558b2f;
+            font-size: 10px;
+        }
+
+        .settings-section {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(45, 80, 22, 0.15);
+            border: 2px solid #81c784;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .settings-title {
+            color: #1b5e20;
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-align: center;
+            font-size: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #81c784;
+        }
+
+        .setting-group {
+            margin-bottom: 12px;
+        }
+
+        .setting-label {
+            font-size: 12px;
+            color: #2d5016;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .setting-group input,
+        .setting-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #a5d6a7;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #2d5016;
+            font-family: inherit;
+        }
+
+        .setting-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .setting-group button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 8px;
+            background: #66bb6a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .setting-group button:hover {
+            background: #4caf50;
+        }
+
+        .delete-btn {
+            background: #e57373 !important;
+            font-size: 10px !important;
+            padding: 5px !important;
+            margin-top: 5px !important;
+        }
+
+        .delete-btn:hover {
+            background: #d32f2f !important;
+        }
+
+        /* モーダルスタイル */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            border-radius: 15px;
+            border: 2px solid #81c784;
+            box-shadow: 0 8px 32px rgba(45, 80, 22, 0.3);
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #81c784;
+        }
+
+        .modal-header h2 {
+            color: #1b5e20;
+            font-size: 18px;
+        }
+
+        .close-btn {
+            background: #e57373;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: #d32f2f;
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #a5d6a7;
+            padding-bottom: 10px;
+        }
+
+        .category-tab {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #a5d6a7;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 11px;
+            color: #2d5016;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .category-tab.active {
+            background: #66bb6a;
+            color: white;
+            border-color: #66bb6a;
+        }
+
+        .category-tab:hover {
+            background: #c8e6c9;
+        }
+
+        .question-group {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .question-group.active {
+            display: block;
+        }
+
+        .question-item {
+            margin-bottom: 15px;
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #66bb6a;
+        }
+
+        .question-text {
+            font-size: 12px;
+            font-weight: bold;
+            color: #1b5e20;
+            margin-bottom: 8px;
+        }
+
+        .question-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #a5d6a7;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #2d5016;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 50px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #81c784;
+        }
+
+        .modal-footer button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .save-btn {
+            background: #66bb6a;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: #4caf50;
+        }
+
+        .cancel-btn {
+            background: #c8e6c9;
+            color: #1b5e20;
+        }
+
+        .cancel-btn:hover {
+            background: #a5d6a7;
+        }
+
+        .detail-settings-btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            background: #81c784;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .detail-settings-btn:hover {
+            background: #66bb6a;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #e8f5e9;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #81c784;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #66bb6a;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .sidebar {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .sidebar {
+                grid-template-columns: 1fr;
+            }
+
+            .message-content {
+                max-width: 95%;
+            }
+
+            .container {
+                gap: 10px;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+
+            .category-tabs {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="header">
+                <h1 id="characterName">キャラクター</h1>
+                <p id="characterStatus">チャットを開始してください</p>
+            </div>
+
+            <div class="chat-container" id="chatContainer"></div>
+
+            <div class="input-area">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="メッセージを入力してください..."
+                    autocomplete="off"
+                >
+                <button class="send-btn" onclick="sendMessage()">送信</button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="calendar-section">
+                <div class="calendar-title">📅 カレンダー</div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+
+                <div class="event-input-section">
+                    <input 
+                        type="text" 
+                        id="eventTitle" 
+                        placeholder="予定のタイトル"
+                        maxlength="20"
+                    >
+                    <input 
+                        type="time" 
+                        id="eventTime"
+                    >
+                    <select id="reminderTime">
+                        <option value="0">リマインドなし</option>
+                        <option value="5">5分前</option>
+                        <option value="15">15分前</option>
+                        <option value="30">30分前</option>
+                        <option value="60">1時間前</option>
+                    </select>
+                    <button onclick="addEvent()">予定を追加</button>
+                </div>
+
+                <div class="event-list" id="eventList"></div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-title">⚙️ キャラクター設定</div>
+                <div class="setting-group">
+                    <div class="setting-label">名前</div>
+                    <input 
+                        type="text" 
+                        id="charName" 
+                        placeholder="キャラクター名"
+                        maxlength="20"
+                        value="ナツ"
+                    >
+                </div>
+                <div class="setting-group">
+                    <div class="setting-label">基本性格</div>
+                    <textarea 
+                        id="charPersonality" 
+                        placeholder="例：明るく、常に敬語。クールな一面も持つ。..."
+                    >明るく親切な性格で、敬語で話します。</textarea>
+                </div>
+                <div class="setting-group">
+                    <button onclick="saveCharacter()">基本設定を保存</button>
+                    <button class="detail-settings-btn" onclick="openDetailModal()">📋 詳細設定を編集</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 詳細設定モーダル -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>キャラクター詳細設定</h2>
+                <button class="close-btn" onclick="closeDetailModal()">&times;</button>
+            </div>
+
+            <div class="category-tabs" id="categoryTabs"></div>
+
+            <div id="questionContainer"></div>
+
+            <div class="modal-footer">
+                <button class="save-btn" onclick="saveDetailSettings()">保存</button>
+                <button class="cancel-btn" onclick="closeDetailModal()">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数
+        let selectedDate = new Date();
+        let events = {};
+        let characterName = 'ナツ';
+        let characterPersonality = '明るく親切な性格で、敬語で話します。';
+        let detailSettings = {};
+        let chatHistory = [];
+
+        // 質問カテゴリー定義
+        const questionCategories = {
+            '基本属性': {
+                'name': 'キャラクターの名前は何ですか？',
+                'age': '年齢または年代は？',
+                'gender': '性別または性自認は？',
+                'occupation': '職業や立場は？',
+                'birthplace': '出身地や住んでいる地域は？',
+                'appearance': '身長や体格の特徴は？',
+                'features': '外見的な特徴（髪型、目の色など）は？',
+                'firstImpression': '第一印象でどのような人に見えますか？',
+                'hobbies': '趣味は何ですか？（3-5個）',
+                'strengths': '得意なことは何ですか？'
+            },
+            '性格・気質': {
+                'temperament': '基本的な性格は明るい方ですか、それとも落ち着いている方ですか？',
+                'sociability': '社交的ですか、それとも内向的ですか？',
+                'perfectionism': '完璧主義者ですか、それとものんびり屋ですか？',
+                'logic': '論理的ですか、それとも直感的ですか？',
+                'decisiveness': '優柔不断ですか、それとも決断力がありますか？',
+                'outlook': 'プラス思考ですか、それともマイナス思考ですか？',
+                'impulsive': '衝動的ですか、それとも慎重ですか？',
+                'humor': 'ユーモア好きですか？どのような冗談を好みますか？',
+                'tidiness': '几帳面ですか、それとも大雑把ですか？',
+                'emotions': '感情的になりやすいですか？',
+                'dependency': '人に頼りやすいですか？',
+                'leadership': 'リーダーシップはありますか？',
+                'competitiveness': '競争心が強いですか？',
+                'challenge': '新しいことに挑戦するのは好きですか？',
+                'changePreference': '変化を好みますか、それとも安定を好みますか？',
+                'discretion': '秘密を守ることができますか？',
+                'honesty': '嘘をつきやすいですか？',
+                'pride': 'プライドは高いですか？',
+                'confidence': '自信がありますか？',
+                'listening': '人の話を聞くのが得意ですか？'
+            },
+            '口調・言語表現': {
+                'basicTone': '話すときの基本的な口調は敬語ですか、それともカジュアルですか？',
+                'catchphrases': 'よく使う口癖はありますか？',
+                'endingParticles': '語尾は固定していますか？',
+                'politePeople': '丁寧に話しかけてくる人にはどう返しますか？',
+                'closeFriends': '親友同然の人にはどのように話しかけますか？',
+                'firstMeeting': '初対面の人にはどのような態度を取りますか？',
+                'superiors': '目上の人に対してはどのような態度ですか？',
+                'children': '子どもに対してはどのような態度ですか？',
+                'laughs': 'よく笑いますか？',
+                'anger': 'よく怒りますか？',
+                'sighs': 'よくため息をつきますか？',
+                'talkLength': '話が長いですか、それとも短くまとめますか？',
+                'questions': '質問をよくしますか？',
+                'selfDisclosure': '自分のことを話しやすいですか？',
+                'jokes': '冗談を言いますか？',
+                'praise': '褒めるのは得意ですか？',
+                'criticism': '批判的に話しかけることはありますか？',
+                'preaching': '説教的になることはありますか？',
+                'empathy': '相手の話に共感を示しますか？',
+                'silence': '沈黙を避けますか？'
+            },
+            '行動パターン': {
+                'wakeTime': '朝は早く起きますか、それとも遅く起きますか？',
+                'chronotype': '夜型ですか、朝型ですか？',
+                'dailyRoutine': '1日の大半をどのように過ごしますか？',
+                'weekend': '休日は何をして過ごしますか？',
+                'socialFrequency': '友人とはどのくらいの頻度で会いますか？',
+                'alone': '一人の時間をどのように使いますか？',
+                'exercise': '運動はしますか？',
+                'cooking': '料理は得意ですか？',
+                'cleaning': '掃除は好きですか？',
+                'shopping': '買い物は好きですか？',
+                'travel': '旅行に行きますか？どのようなタイプの旅？',
+                'movies': '映画や本は好きですか？ジャンルは？',
+                'music': '音楽は好きですか？何を聴きますか？',
+                'sns': 'SNSをよく使いますか？',
+                'games': 'ゲームをしますか？',
+                'eating': '食べることは好きですか？好物は？',
+                'sweets': '甘いものは好きですか？',
+                'alcohol': 'お酒は飲みますか？',
+                'latenight': '夜更かしをしますか？',
+                'earlysleep': '早寝するほうですか？'
+            },
+            '価値観・信念': {
+                'important': '人生で最も大切なことは何ですか？',
+                'friendship': '友情についてどう考えますか？',
+                'romance': '恋愛についてどう考えますか？',
+                'work': '仕事（学業）についてどう考えますか？',
+                'money': 'お金についてどう考えますか？',
+                'family': '家族についてどう考えますか？',
+                'success': '成功の定義は何ですか？',
+                'failure': '失敗についてどう考えますか？',
+                'justice': '社会正義についてどう考えますか？',
+                'rules': 'ルールについてどう考えますか？',
+                'effort': '努力についてどう考えますか？',
+                'happiness': '幸せの定義は何ですか？',
+                'relationships': '人間関係で大切なことは何ですか？',
+                'honesty2': '正直さについてどう考えますか？',
+                'responsibility': '責任についてどう考えますか？'
+            },
+            '好みと嫌悪': {
+                'dislikedFood': '嫌いな食べ物は何ですか？',
+                'dislikedPeople': '嫌いな人のタイプは？',
+                'dislikedSituation': '嫌いな状況は？',
+                'fears': '怖いことは何ですか？',
+                'stress': 'ストレスを感じるのはどんなときですか？',
+                'season': '好きな季節は？',
+                'weather': '好きな天気は？',
+                'timeOfDay': '好きな時間帯は？',
+                'place': '好きな場所は？',
+                'smell': '好きな匂いは？',
+                'color': '好きな色は？',
+                'dislikedColor': '嫌いな色は？',
+                'dislikedSound': '嫌いな音は？',
+                'admiration': '敬意を感じる人のタイプは？',
+                'lifelong': '一生かけてやりたいことは何ですか？'
+            }
+        };
+
+        // 初期化
+        function init() {
+            loadSettings();
+            renderCalendar();
+            loadEventsFromStorage();
+            displayCharacterStatus();
+            initCategoryTabs();
+        }
+
+        // カテゴリータブ初期化
+        function initCategoryTabs() {
+            const tabContainer = document.getElementById('categoryTabs');
+            tabContainer.innerHTML = '';
+
+            let isFirst = true;
+            for (const category in questionCategories) {
+                const tab = document.createElement('button');
+                tab.className = 'category-tab' + (isFirst ? ' active' : '');
+                tab.textContent = category;
+                tab.onclick = () => switchCategory(category);
+                tabContainer.appendChild(tab);
+                isFirst = false;
+            }
+        }
+
+        // カテゴリー切り替え
+        function switchCategory(category) {
+            // タブ切り替え
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // 質問グループ切り替え
+            document.querySelectorAll('.question-group').forEach(group => {
+                group.classList.remove('active');
+            });
+
+            const categoryId = category.replace(/\s+/g, '_');
+            const group = document.getElementById(`group_${categoryId}`);
+            if (group) {
+                group.classList.add('active');
+            }
+        }
+
+        // 詳細設定モーダル開く
+        function openDetailModal() {
+            const modal = document.getElementById('detailModal');
+            const container = document.getElementById('questionContainer');
+            container.innerHTML = '';
+
+            for (const category in questionCategories) {
+                const categoryId = category.replace(/\s+/g, '_');
+                const group = document.createElement('div');
+                group.className = 'question-group';
+                group.id = `group_${categoryId}`;
+
+                const questions = questionCategories[category];
+                for (const [key, question] of Object.entries(questions)) {
+                    const questionItem = document.createElement('div');
+                    questionItem.className = 'question-item';
+                    
+                    const questionText = document.createElement('div');
+                    questionText.className = 'question-text';
+                    questionText.textContent = question;
+                    
+                    const questionInput = document.createElement('textarea');
+                    questionInput.className = 'question-input';
+                    questionInput.id = `q_${key}`;
+                    questionInput.placeholder = '記入してください（任意）';
+                    questionInput.value = detailSettings[key] || '';
+                    
+                    questionItem.appendChild(questionText);
+                    questionItem.appendChild(questionInput);
+                    group.appendChild(questionItem);
+                }
+
+                container.appendChild(group);
+            }
+
+            // 最初のカテゴリーをアクティブにする
+            const firstCategory = Object.keys(questionCategories)[0];
+            const firstGroupId = firstCategory.replace(/\s+/g, '_');
+            document.getElementById(`group_${firstGroupId}`).classList.add('active');
+
+            modal.classList.add('show');
+        }
+
+        // 詳細設定モーダル閉じる
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        // 詳細設定保存
+        function saveDetailSettings() {
+            const inputs = document.querySelectorAll('.question-input');
+            inputs.forEach(input => {
+                const key = input.id.replace('q_', '');
+                const value = input.value.trim();
+                if (value) {
+                    detailSettings[key] = value;
+                } else {
+                    delete detailSettings[key];
+                }
+            });
+
+            localStorage.setItem('detailSettings', JSON.stringify(detailSettings));
+            closeDetailModal();
+            addBotMessage('詳細設定を保存しました！これでキャラクターの深い情報が設定されました。');
+        }
+
+        // カレンダーレンダリング
+        function renderCalendar() {
+            const calendar = document.getElementById('calendarGrid');
+            calendar.innerHTML = '';
+
+            // 曜日ヘッダー
+            const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+            dayNames.forEach(day => {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'day-name';
+                dayEl.textContent = day;
+                calendar.appendChild(dayEl);
+            });
+
+            // 月の日付
+            const year = selectedDate.getFullYear();
+            const month = selectedDate.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+
+            // 前月の空白
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                const emptyEl = document.createElement('div');
+                calendar.appendChild(emptyEl);
+            }
+
+            // 当月の日付
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                dayEl.textContent = day;
+
+                const dateStr = formatDate(new Date(year, month, day));
+                
+                // 今日
+                if (dateStr === formatDate(new Date())) {
+                    dayEl.classList.add('today');
+                }
+
+                // イベントがある日
+                if (events[dateStr] && events[dateStr].length > 0) {
+                    dayEl.classList.add('has-event');
+                }
+
+                dayEl.onclick = () => selectDate(new Date(year, month, day));
+                calendar.appendChild(dayEl);
+            }
+        }
+
+        // 日付選択
+        function selectDate(date) {
+            selectedDate = date;
+            renderCalendar();
+            displayEvents();
+        }
+
+        // 日付フォーマット
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 予定追加
+        function addEvent() {
+            const title = document.getElementById('eventTitle').value.trim();
+            const time = document.getElementById('eventTime').value;
+            const reminder = document.getElementById('reminderTime').value;
+
+            if (!title || !time) {
+                alert('タイトルと時間を入力してください');
+                return;
+            }
+
+            const dateStr = formatDate(selectedDate);
+            if (!events[dateStr]) {
+                events[dateStr] = [];
+            }
+
+            events[dateStr].push({
+                title,
+                time,
+                reminder: parseInt(reminder),
+                id: Date.now()
+            });
+
+            saveEventsToStorage();
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventTime').value = '';
+            document.getElementById('reminderTime').value = '0';
+
+            renderCalendar();
+            displayEvents();
+            
+            // チャットに通知
+            addBotMessage(`${title}を${selectedDate.getMonth() + 1}月${selectedDate.getDate()}日の${time}に予定を追加しました！`);
+        }
+
+        // 予定表示
+        function displayEvents() {
+            const eventList = document.getElementById('eventList');
+            const dateStr = formatDate(selectedDate);
+            const dayEvents = events[dateStr] || [];
+
+            eventList.innerHTML = '';
+
+            if (dayEvents.length === 0) {
+                eventList.innerHTML = '<div style="color: #a5d6a7; font-size: 12px; text-align: center; padding: 20px;">この日の予定はありません</div>';
+                return;
+            }
+
+            dayEvents.forEach(event => {
+                const eventEl = document.createElement('div');
+                eventEl.className = 'event-item';
+                eventEl.innerHTML = `
+                    <div class="event-item-title">${event.title}</div>
+                    <div class="event-item-time">⏰ ${event.time}</div>
+                    <div class="event-item-time">🔔 ${event.reminder === 0 ? 'なし' : event.reminder + '分前'}</div>
+                    <button class="delete-btn" onclick="deleteEvent('${dateStr}', ${event.id})">削除</button>
+                `;
+                eventList.appendChild(eventEl);
+            });
+        }
+
+        // 予定削除
+        function deleteEvent(dateStr, eventId) {
+            events[dateStr] = events[dateStr].filter(e => e.id !== eventId);
+            saveEventsToStorage();
+            renderCalendar();
+            displayEvents();
+            addBotMessage('予定を削除しました。');
+        }
+
+        // ストレージ保存
+        function saveEventsToStorage() {
+            localStorage.setItem('chatAppEvents', JSON.stringify(events));
+        }
+
+        function loadEventsFromStorage() {
+            const stored = localStorage.getItem('chatAppEvents');
+            if (stored) {
+                events = JSON.parse(stored);
+            }
+        }
+
+        // 設定保存
+        function saveCharacter() {
+            characterName = document.getElementById('charName').value || 'ナツ';
+            characterPersonality = document.getElementById('charPersonality').value || '明るく親切な性格で、敬語で話します。';
+
+            localStorage.setItem('characterName', characterName);
+            localStorage.setItem('characterPersonality', characterPersonality);
+
+            displayCharacterStatus();
+            addBotMessage(`キャラクター設定を更新しました！これからは${characterName}として対応します。`);
+        }
+
+        // 設定読込
+        function loadSettings() {
+            const savedName = localStorage.getItem('characterName');
+            const savedPersonality = localStorage.getItem('characterPersonality');
+            const savedDetail = localStorage.getItem('detailSettings');
+
+            if (savedName) characterName = savedName;
+            if (savedPersonality) characterPersonality = savedPersonality;
+            if (savedDetail) detailSettings = JSON.parse(savedDetail);
+
+            document.getElementById('charName').value = characterName;
+            document.getElementById('charPersonality').value = characterPersonality;
+        }
+
+        // ステータス表示
+        function displayCharacterStatus() {
+            document.getElementById('characterName').textContent = characterName;
+            const detailCount = Object.keys(detailSettings).length;
+            const statusText = detailCount > 0 
+                ? `オンライン・チャット可能 (詳細設定: ${detailCount}項目)`
+                : 'オンライン・チャット可能';
+            document.getElementById('characterStatus').textContent = statusText;
+        }
+
+        // メッセージ送信
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            addUserMessage(message);
+            input.value = '';
+            input.focus();
+
+            // ボットの返答
+            setTimeout(() => {
+                const botResponse = generateBotResponse(message);
+                addBotMessage(botResponse);
+                checkReminders();
+            }, 500);
+        }
+
+        // ユーザーメッセージ追加
+        function addUserMessage(text) {
+            const chat = document.getElementById('chatContainer');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message user';
+            messageEl.innerHTML = `
+                <div>
+                    <div class="message-content">${escapeHtml(text)}</div>
+                    <div class="message-time">${getCurrentTime()}</div>
+                </div>
+            `;
+            chat.appendChild(messageEl);
+            chat.scrollTop = chat.scrollHeight;
+            chatHistory.push({ role: 'user', content: text });
+        }
+
+        // ボットメッセージ追加
+        function addBotMessage(text) {
+            const chat = document.getElementById('chatContainer');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message bot';
+            messageEl.innerHTML = `
+                <div>
+                    <div class="message-content">${escapeHtml(text)}</div>
+                    <div class="message-time">${getCurrentTime()}</div>
+                </div>
+            `;
+            chat.appendChild(messageEl);
+            chat.scrollTop = chat.scrollHeight;
+            chatHistory.push({ role: 'bot', content: text });
+        }
+
+        // ボット返答生成
+        function generateBotResponse(userMessage) {
+            const lowerMessage = userMessage.toLowerCase();
+
+            // キーワードベースの回答
+            const responses = {
+                'こんにちは': `こんにちは！${characterName}です。何かお手伝いできることがあれば、お気軽にお聞きください。`,
+                'こんばんは': `こんばんは！${characterName}です。お疲れさまです。`,
+                'おはよう': `おはようございます！${characterName}です。今日も頑張りましょう！`,
+                '元気': `ありがとうございます。お陰様で元気です。${characterName}はいつも前向きに過ごしています。`,
+                'ありがとう': `こちらこそ、ありがとうございます。喜んでお役に立てます。`,
+                'すみません': `いえいえ、大丈夫です。何かお困りのことがあれば、いつでもお聞きください。`,
+                'カレンダー': `カレンダーはサイドバーにあります。日付をクリックして、予定を追加してください。`,
+                '予定': `右側のカレンダーで予定を管理できます。タイトルと時間、リマインド時間を設定してください。`,
+                '詳細設定': `詳細設定では、私の性格や特徴を100個の質問から選んで設定できます。より深い${characterName}になります。`,
+            };
+
+            for (const [key, response] of Object.entries(responses)) {
+                if (lowerMessage.includes(key)) {
+                    return response;
+                }
+            }
+
+            // 詳細設定に基づく返答
+            if (Object.keys(detailSettings).length > 0) {
+                const detailHints = [
+                    `そうですか。${characterName}もそうですね。`,
+                    `そのようなお考えなんですね。${characterName}も共感します。`,
+                    `了解です。${characterName}はいつもサポートする準備ができています。`,
+                    `そうなんですね。${characterName}も一緒に考えてみたいと思います。`,
+                ];
+                return detailHints[Math.floor(Math.random() * detailHints.length)];
+            }
+
+            // デフォルト応答
+            const defaultResponses = [
+                `${characterName}ですが、そうなんですね。詳しく聞かせていただけますか？`,
+                `そうですか。${characterName}も一緒に考えてみたいと思います。`,
+                `${characterName}も同感です。何かお手伝いできることはありますか？`,
+                `了解です。${characterName}は常にサポートする準備ができています。`,
+                `そのようなお考えなんですね。${characterName}は参考になります。`,
+            ];
+
+            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+        }
+
+        // リマインダーチェック
+        function checkReminders() {
+            const now = new Date();
+            const dateStr = formatDate(now);
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+
+            if (events[dateStr]) {
+                events[dateStr].forEach(event => {
+                    if (event.reminder > 0) {
+                        const [hour, min] = event.time.split(':').map(Number);
+                        const eventDate = new Date(now.getFullYear(), now.getMonth(), 
+                                                 now.getDate(), hour, min);
+                        const reminderDate = new Date(eventDate.getTime() - event.reminder * 60000);
+
+                        if (now >= reminderDate && now < new Date(reminderDate.getTime() + 60000)) {
+                            addBotMessage(`🔔 リマインド: ${event.title}は${event.time}です。`);
+                        }
+                    }
+                });
+            }
+        }
+
+        // ユーティリティ関数
+        function getCurrentTime() {
+            const now = new Date();
+            return now.getHours().toString().padStart(2, '0') + ':' + 
+                   now.getMinutes().toString().padStart(2, '0');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Enterキーでメッセージ送信
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+            document.getElementById('messageInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // 初期メッセージ
+            setTimeout(() => {
+                addBotMessage(`こんにちは！${characterName}です。何かお手伝いできることはありますか？`);
+            }, 500);
+
+            // 定期的にリマインダーチェック
+            setInterval(checkReminders, 60000);
+
+            // モーダルの外側クリックで閉じる
+            window.onclick = function(event) {
+                const modal = document.getElementById('detailModal');
+                if (event.target === modal) {
+                    closeDetailModal();
+                }
+            };
+        });
+    </script>
+</body>
+</html>
