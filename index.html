@@ -128,6 +128,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 15px;
+            flex-wrap: wrap;
         }
 
         .theme-selector {
@@ -194,7 +195,7 @@
             display: flex;
         }
 
-        /* 1画面ダッシュボードレイアウト */
+        /* 1画面ダッシュボードレイアウト (PC向け) */
         .dashboard-layout {
             display: flex;
             width: 100%;
@@ -202,7 +203,7 @@
             gap: 15px;
         }
 
-        /* PCサイドバー（カレンダー・ToDo） */
+        /* サイドバー（カレンダー・ToDo） */
         .sidebar-panel {
             width: 360px;
             display: flex;
@@ -257,7 +258,7 @@
             max-width: 82%;
             padding: 10px 14px;
             border-radius: 10px;
-            line-height: 1.5;
+            line-height: 1.55;
             font-size: 0.92rem;
             word-break: break-word;
             white-space: pre-wrap;
@@ -284,12 +285,13 @@
             font-weight: bold;
         }
 
+        /* 💡 入力エリア（縦をゆったり確保） */
         .input-area {
-            padding: 10px;
+            padding: 12px;
             background: var(--panel-bg);
             border-top: 1px solid var(--border-color);
             display: flex;
-            gap: 8px;
+            gap: 10px;
             align-items: flex-end;
         }
 
@@ -298,11 +300,13 @@
             padding: 10px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
+            line-height: 1.4;
             background: var(--card-bg);
             color: var(--text-color);
-            resize: none;
-            height: 48px;
+            resize: vertical;
+            height: 90px; /* 広めの初期高さ */
+            min-height: 60px;
             font-family: inherit;
             box-sizing: border-box;
         }
@@ -316,7 +320,10 @@
             cursor: pointer;
             font-weight: bold;
             transition: background 0.2s;
-            height: 48px;
+            height: 90px; /* 入力欄と揃えたボタン高さ */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn-main:hover {
@@ -360,7 +367,7 @@
             list-style: none;
             padding: 0;
             margin: 0;
-            max-height: 180px;
+            max-height: 200px;
             overflow-y: auto;
         }
 
@@ -395,7 +402,7 @@
             background: rgba(0,0,0,0.1);
             color: var(--text-color);
             border: 1px solid var(--border-color);
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.75rem;
@@ -424,13 +431,39 @@
             gap: 8px;
         }
 
-        /* レスポンシブ (スマホ向け調整) */
+        /* 📱 レスポンシブ (スマホ向け調整: 縦スクロール型で広々配置) */
         @media (max-width: 850px) {
+            body {
+                padding: 6px;
+            }
+            .container {
+                height: auto;
+                min-height: 100vh;
+                overflow: visible;
+            }
+            .app-body {
+                overflow: visible;
+            }
+            .tab-content {
+                height: auto;
+                overflow: visible;
+            }
             .dashboard-layout {
                 flex-direction: column;
+                height: auto;
             }
             .sidebar-panel {
                 width: 100%;
+                overflow-y: visible;
+            }
+            .chat-area {
+                height: 550px; /* スマホでもしっかり高さを確保 */
+            }
+            .input-area textarea {
+                height: 70px;
+            }
+            .btn-main {
+                height: 70px;
             }
         }
     </style>
@@ -462,7 +495,7 @@
         <!-- アプリケーション本体 -->
         <div class="app-body">
             
-            <!-- 1. メイン画面（1画面ダッシュボード） -->
+            <!-- 1. メイン画面（ダッシュボード） -->
             <div id="dashboard-tab" class="tab-content active">
                 <div class="dashboard-layout">
                     
@@ -521,7 +554,7 @@
                         <div class="chat-container" id="chatBox"></div>
 
                         <div class="input-area">
-                            <textarea id="userInput" placeholder="メッセージを入力... (Enterで送信, Shift+Enterで改行)" onkeydown="handleKeyDown(event)"></textarea>
+                            <textarea id="userInput" placeholder="メッセージを入力...&#10;(Enterで送信, Shift+Enterで改行)" onkeydown="handleKeyDown(event)"></textarea>
                             <button class="btn-main" onclick="sendMessage()">送信</button>
                         </div>
                     </div>
@@ -615,8 +648,8 @@
             }
         };
 
-        let chatHistory = []; // API用コンテキスト
-        let chatLogs = [];    // 画面表示・保存用ログ
+        let chatHistory = [];
+        let chatLogs = [];
         let calendarEvents = [];
         let todoList = [];
 
@@ -654,10 +687,12 @@
             document.getElementById('apiKeyInput').value = localStorage.getItem('geminiApiKey') || '';
             document.getElementById('modelNameInput').value = localStorage.getItem('geminiModelName') || 'gemini-2.5-flash';
             
-            document.getElementById('charNameInput').value = localStorage.getItem('geminiCharName') || 'エリザベス';
+            const charName = localStorage.getItem('geminiCharName') || 'エリザベス';
+            document.getElementById('charNameInput').value = charName;
             document.getElementById('charFirstPerson').value = localStorage.getItem('geminiCharFirstPerson') || '私';
             document.getElementById('charSecondPerson').value = localStorage.getItem('geminiCharSecondPerson') || 'あなた';
             document.getElementById('charUserCall').value = localStorage.getItem('geminiCharUserCall') || 'ご主人様';
+            document.getElementById('chatTitleName').innerText = `会話ログ (${charName})`;
 
             calendarEvents = JSON.parse(localStorage.getItem('geminiCalendarEvents') || '[]');
             todoList = JSON.parse(localStorage.getItem('geminiTodoList') || '[]');
@@ -665,7 +700,6 @@
 
             // チャット初期メッセージがない場合のデフォルト
             if (chatLogs.length === 0) {
-                const charName = localStorage.getItem('geminiCharName') || 'エリザベス';
                 const userCall = localStorage.getItem('geminiCharUserCall') || 'ご主人様';
                 chatLogs.push({
                     sender: 'model',
@@ -727,7 +761,7 @@
                 if (val) answers[key] = val;
             });
             localStorage.setItem('geminiCharAnswers', JSON.stringify(answers));
-            alert('✨ プロファイルと呼称設定をすべて反映いたしましたわ！');
+            alert('✨ プロファイルと呼称設定をすべて保存・反映いたしましたわ！');
         }
 
         // --- カレンダー & リマインダー ---
@@ -785,7 +819,6 @@
             });
         }
 
-        // リマインダー監視処理
         function checkReminders() {
             if (calendarEvents.length === 0) return;
 
@@ -800,7 +833,6 @@
                 const eventTime = new Date(`${e.date}T${e.time}`);
                 const remindTime = new Date(eventTime.getTime() - (e.remindMinutes * 60 * 1000));
 
-                // リマインド時刻を過ぎており、かつ予定時刻から1時間以内であれば通知
                 if (now >= remindTime && now < new Date(eventTime.getTime() + 3600000)) {
                     e.reminded = true;
                     updated = true;
@@ -860,15 +892,13 @@
             });
         }
 
-        // --- チャット処理 & ログ保存 ---
+        // --- チャット処理 ---
         function handleKeyDown(e) {
             if (e.key === 'Enter') {
                 if (e.shiftKey) {
-                    // Shift + Enter で改行
-                    return;
+                    return; // Shift+Enterで改行
                 } else {
-                    // Enter 単体で送信
-                    e.preventDefault();
+                    e.preventDefault(); // Enterで送信
                     sendMessage();
                 }
             }
@@ -1017,7 +1047,6 @@ ${rpSettings || '（特別なプロファイル未設定）'}
                 { role: 'model', parts: [{ text: `了解いたしました。設定された一人称・二人称・呼び方を守り、完璧になりきってお話しいたします。` }] }
             ];
 
-            // 直近の会話文脈を反映
             chatLogs.slice(-8).forEach(msg => {
                 contents.push({
                     role: msg.sender === 'user' ? 'user' : 'model',
