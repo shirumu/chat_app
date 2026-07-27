@@ -272,7 +272,6 @@
             font-size: 11px;
         }
 
-        /* ToDo リスト スタイル */
         .todo-input-group {
             display: flex;
             gap: 5px;
@@ -337,7 +336,6 @@
             cursor: pointer;
         }
 
-        /* カレンダー スタイル */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -418,7 +416,6 @@
             font-size: 10px;
         }
 
-        /* キャラクター設定 */
         .setting-group {
             margin-bottom: 10px;
         }
@@ -465,7 +462,6 @@
             padding: 4px !important;
         }
 
-        /* モーダル */
         .modal {
             display: none;
             position: fixed;
@@ -644,7 +640,7 @@
         </div>
 
         <div class="sidebar">
-            <!-- AI選択 & キー設定 -->
+            <!-- AI設定 -->
             <div class="card-section">
                 <div class="section-title">🤖 AI設定</div>
                 <div class="ai-options">
@@ -826,7 +822,7 @@
             pink: { primaryLight: '#f8bbd0', primaryMain: '#ec407a', primaryDark: '#880e4f', secondaryLight: '#fce4ec', secondaryLighter: '#fdf7f9', textDark: '#880e4f', textLight: '#c2185b', accentLight: '#f06292', accentLighter: '#f48fb1' },
             orange: { primaryLight: '#ffe0b2', primaryMain: '#ffa726', primaryDark: '#e65100', secondaryLight: '#fff3e0', secondaryLighter: '#fffbf7', textDark: '#e65100', textLight: '#f57c00', accentLight: '#ffb74d', accentLighter: '#ffcc80' },
             teal: { primaryLight: '#b2ebf2', primaryMain: '#26c6da', primaryDark: '#00838f', secondaryLight: '#e0f2f1', secondaryLighter: '#f0fafb', textDark: '#004d40', textLight: '#00838f', accentLight: '#4dd0e1', accentLighter: '#80deea' },
-            green: { primaryLight: '#c8e6c9', primaryMain: '#66bb6a', primaryDark: '#2e7d32', secondaryLight: '#e8f5e9', secondaryLighter: '#f1f8e9', textDark: '#1b5e20', textLight: '#2e7d32', accentLight: '#81c784', accentLighter: '#a5d6a7' }
+            green: { primaryLight: '#c8e6c9', primaryMain: '#66bb6a', primaryDark: '#2e7d32', secondaryLight: '#e8f8e9', secondaryLighter: '#f1f8e9', textDark: '#1b5e20', textLight: '#2e7d32', accentLight: '#81c784', accentLighter: '#a5d6a7' }
         };
 
         const questionCategories = {
@@ -854,7 +850,9 @@
         function selectAI(aiName) {
             selectedAI = aiName;
             document.querySelectorAll('.ai-option').forEach(opt => opt.classList.remove('selected'));
-            event.target.classList.add('selected');
+            if (event && event.target) {
+                event.target.classList.add('selected');
+            }
 
             const keyArea = document.getElementById('geminiKeyArea');
             keyArea.style.display = (aiName === 'gemini') ? 'block' : 'none';
@@ -865,7 +863,7 @@
             localStorage.setItem('geminiApiKey', key);
         }
 
-        // Gemini API呼び出し
+        // Gemini API呼び出し（最新の gemini-2.0-flash を使用）
         async function callGeminiAPI(userMessage) {
             const apiKey = localStorage.getItem('geminiApiKey');
             if (!apiKey) {
@@ -885,13 +883,11 @@ ${advancedSettings.speechCustom ? `語尾等の特徴: ${advancedSettings.speech
 詳細設定: ${JSON.stringify(detailSettings)}
 このキャラクターとして、親しく会話してください。`;
 
-            // 会話コンテキストの構成
             const contents = [
                 { role: 'user', parts: [{ text: `[システム設定]\n${systemPrompt}` }] },
                 { role: 'model', parts: [{ text: `了解しました。私は${characterName}として振る舞います。` }] }
             ];
 
-            // 直近のチャット履歴を反映 (最大6件)
             chatHistory.slice(-6).forEach(msg => {
                 contents.push({
                     role: msg.role === 'user' ? 'user' : 'model',
@@ -902,7 +898,6 @@ ${advancedSettings.speechCustom ? `語尾等の特徴: ${advancedSettings.speech
             contents.push({ role: 'user', parts: [{ text: userMessage }] });
 
             try {
-                // モデル名を gemini-2.0-flash に更新
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -922,7 +917,7 @@ ${advancedSettings.speechCustom ? `語尾等の特徴: ${advancedSettings.speech
             }
         }
 
-        // ローカルAI（簡易レスポンス）
+        // 簡易ローカルAI
         function generateLocalResponse(userMessage) {
             const userCall = advancedSettings.userName || advancedSettings.secondPerson;
             const responses = [
@@ -963,7 +958,6 @@ ${advancedSettings.speechCustom ? `語尾等の特徴: ${advancedSettings.speech
             input.focus();
         }
 
-        // チャットUI & ストレージ
         function addUserMessage(text) {
             const time = getCurrentTime();
             renderMessageUI('user', text, time);
@@ -1085,7 +1079,9 @@ ${advancedSettings.speechCustom ? `語尾等の特徴: ${advancedSettings.speech
         function selectSpeechStyle(styleName) {
             advancedSettings.speechStyle = styleName;
             document.querySelectorAll('.speech-option').forEach(opt => opt.classList.remove('selected'));
-            event.target.classList.add('selected');
+            if (event && event.target) {
+                event.target.classList.add('selected');
+            }
         }
 
         // カレンダー機能
@@ -1183,7 +1179,9 @@ ${advancedSettings.speechCustom ? `語尾等の特徴: ${advancedSettings.speech
 
         function switchAdvancedTab(tabName) {
             document.querySelectorAll('#advancedModal .category-tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
             document.querySelectorAll('#advancedModal .question-group').forEach(g => g.classList.remove('active'));
             document.getElementById(`${tabName}-tab`).classList.add('active');
         }
@@ -1240,7 +1238,6 @@ ${advancedSettings.speechCustom ? `語尾等の特徴: ${advancedSettings.speech
             `).join('');
         }
 
-        // ユーティリティ
         function showTypingIndicator() {
             const chat = document.getElementById('chatContainer');
             const el = document.createElement('div');
