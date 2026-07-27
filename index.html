@@ -204,7 +204,7 @@
 
         /* PCサイドバー（カレンダー・ToDo） */
         .sidebar-panel {
-            width: 340px;
+            width: 360px;
             display: flex;
             flex-direction: column;
             gap: 15px;
@@ -228,6 +228,9 @@
             color: var(--primary-color);
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         /* チャットエリア */
@@ -257,6 +260,7 @@
             line-height: 1.5;
             font-size: 0.92rem;
             word-break: break-word;
+            white-space: pre-wrap;
         }
 
         .user-msg {
@@ -281,14 +285,15 @@
         }
 
         .input-area {
-            padding: 12px;
+            padding: 10px;
             background: var(--panel-bg);
             border-top: 1px solid var(--border-color);
             display: flex;
             gap: 8px;
+            align-items: flex-end;
         }
 
-        .input-area input[type="text"] {
+        .input-area textarea {
             flex: 1;
             padding: 10px;
             border: 1px solid var(--border-color);
@@ -296,10 +301,14 @@
             font-size: 0.9rem;
             background: var(--card-bg);
             color: var(--text-color);
+            resize: none;
+            height: 48px;
+            font-family: inherit;
+            box-sizing: border-box;
         }
 
         .btn-main {
-            padding: 8px 16px;
+            padding: 10px 18px;
             background-color: var(--primary-color);
             color: white;
             border: none;
@@ -307,6 +316,7 @@
             cursor: pointer;
             font-weight: bold;
             transition: background 0.2s;
+            height: 48px;
         }
 
         .btn-main:hover {
@@ -326,7 +336,7 @@
             opacity: 0.9;
         }
 
-        .form-group input, .form-group textarea {
+        .form-group input, .form-group textarea, .form-group select {
             width: 100%;
             padding: 8px;
             border: 1px solid var(--border-color);
@@ -376,6 +386,16 @@
             color: white;
             border: none;
             padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .btn-sub {
+            background: rgba(0,0,0,0.1);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 3px 8px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.75rem;
@@ -463,7 +483,19 @@
                                     <input type="time" id="eventTime">
                                 </div>
                             </div>
-                            <button class="btn-main" style="margin-bottom:10px;" onclick="addEvent()">予定を追加</button>
+                            <div class="form-group">
+                                <label>⏰ 通知タイミング:</label>
+                                <select id="eventRemind">
+                                    <option value="0">時間ぴったり</option>
+                                    <option value="5">5分前</option>
+                                    <option value="10">10分前</option>
+                                    <option value="15">15分前</option>
+                                    <option value="30">30分前</option>
+                                    <option value="60">1時間前</option>
+                                    <option value="-1">リマインドなし</option>
+                                </select>
+                            </div>
+                            <button class="btn-main" style="margin-bottom:10px; height: auto; padding: 8px;" onclick="addEvent()">予定を追加</button>
                             <ul id="eventList" class="item-list"></ul>
                         </div>
 
@@ -472,7 +504,7 @@
                             <div class="card-title">✅ やることリスト (ToDo)</div>
                             <div class="form-row" style="margin-bottom:8px;">
                                 <input type="text" id="todoInput" placeholder="新しいタスク..." style="flex:1;">
-                                <button class="btn-main" onclick="addTodo()">追加</button>
+                                <button class="btn-main" style="height: auto; padding: 8px 12px;" onclick="addTodo()">追加</button>
                             </div>
                             <ul id="todoList" class="item-list"></ul>
                         </div>
@@ -481,14 +513,15 @@
 
                     <!-- チャットエリア -->
                     <div class="chat-area">
-                        <div class="chat-container" id="chatBox">
-                            <div class="message model-msg">
-                                <div class="msg-header" id="welcomeCharName">エリザベス</div>
-                                <div>ご主人様、準備が整いましたわ。カレンダーやToDoの確認、あるいは何なりとお話しくださいませ。</div>
-                            </div>
+                        <div style="padding: 8px 15px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:var(--panel-bg);">
+                            <span style="font-weight:bold; font-size:0.85rem;" id="chatTitleName">会話ログ</span>
+                            <button class="btn-sub" onclick="clearChatHistory()">ログを消去</button>
                         </div>
+
+                        <div class="chat-container" id="chatBox"></div>
+
                         <div class="input-area">
-                            <input type="text" id="userInput" placeholder="メッセージを入力..." onkeypress="if(event.key==='Enter') sendMessage()">
+                            <textarea id="userInput" placeholder="メッセージを入力... (Enterで送信, Shift+Enterで改行)" onkeydown="handleKeyDown(event)"></textarea>
                             <button class="btn-main" onclick="sendMessage()">送信</button>
                         </div>
                     </div>
@@ -499,16 +532,33 @@
             <!-- 2. RP質問設定タブ -->
             <div id="questions-tab" class="tab-content" style="flex-direction:column;">
                 <div class="card-title" style="font-size:1.1rem;">🎭 キャラクタープロファイル設定 (RP反映)</div>
-                <p style="font-size:0.85rem; opacity:0.8; margin-top:-5px;">ここで回答された内容はAIに読み込まれ、口調や性格にしっかり反映されますわ。</p>
                 
-                <div class="form-group" style="max-width:300px; margin-bottom:15px;">
-                    <label>キャラクター名 (基本設定):</label>
-                    <input type="text" id="charNameInput" value="エリザベス" onchange="saveBasicCharInfo()">
+                <!-- 呼称の基本設定 -->
+                <div class="cat-box">
+                    <h3>👤 呼称・基本情報</h3>
+                    <div class="q-grid">
+                        <div class="form-group">
+                            <label>キャラクター名:</label>
+                            <input type="text" id="charNameInput" value="エリザベス" onchange="saveBasicCharInfo()">
+                        </div>
+                        <div class="form-group">
+                            <label>一人称 (例: 私, ボク, 俺):</label>
+                            <input type="text" id="charFirstPerson" value="私" placeholder="私" onchange="saveBasicCharInfo()">
+                        </div>
+                        <div class="form-group">
+                            <label>二人称 (例: あなた, 君, お前):</label>
+                            <input type="text" id="charSecondPerson" value="あなた" placeholder="あなた" onchange="saveBasicCharInfo()">
+                        </div>
+                        <div class="form-group">
+                            <label>ユーザーの呼び方 (例: ご主人様, ○○さん):</label>
+                            <input type="text" id="charUserCall" value="ご主人様" placeholder="ご主人様" onchange="saveBasicCharInfo()">
+                        </div>
+                    </div>
                 </div>
 
                 <div id="questionsContainer"></div>
 
-                <button class="btn-main" style="padding:12px; margin-top:10px;" onclick="saveAllQuestions()">質問設定を保存して反映</button>
+                <button class="btn-main" style="padding:12px; margin-top:10px; height:auto;" onclick="saveAllQuestions()">設定をすべて保存して反映</button>
             </div>
 
             <!-- 3. API接続設定タブ -->
@@ -522,7 +572,7 @@
                     <label>使用モデル名:</label>
                     <input type="text" id="modelNameInput" value="gemini-2.5-flash" placeholder="gemini-2.5-flash">
                 </div>
-                <button class="btn-main" style="margin-top:10px;" onclick="saveApiSettings()">設定を保存</button>
+                <button class="btn-main" style="margin-top:10px; height:auto;" onclick="saveApiSettings()">設定を保存</button>
             </div>
 
         </div>
@@ -532,7 +582,6 @@
         // 質問カテゴリー定義
         const questionCategories = {
             '基本属性': {
-                'name': 'キャラクターの名前は何ですか？',
                 'age': '年齢または年代は？',
                 'gender': '性別または性自認は？',
                 'occupation': '職業や立場は？',
@@ -553,99 +602,21 @@
                 'impulsive': '衝動的ですか、それとも慎重ですか？',
                 'humor': 'ユーモア好きですか？どのような冗談を好みますか？',
                 'tidiness': '几帳面ですか、それとも大雑把ですか？',
-                'emotions': '感情的になりやすいですか？',
-                'dependency': '人に頼りやすいですか？',
-                'leadership': 'リーダーシップはありますか？',
-                'competitiveness': '競争心が強いですか？',
-                'challenge': '新しいことに挑戦するのは好きですか？',
-                'changePreference': '変化を好みますか、それとも安定を好みますか？',
-                'discretion': '秘密を守ることができますか？',
-                'honesty': '嘘をつきやすいですか？',
-                'pride': 'プライドは高いですか？',
-                'confidence': '自信がありますか？',
-                'listening': '人の話を聞くのが得意ですか？'
+                'emotions': '感情的になりやすいですか？'
             },
             '口調・言語表現': {
                 'basicTone': '話すときの基本的な口調は敬語ですか、それともカジュアルですか？',
                 'catchphrases': 'よく使う口癖はありますか？',
-                'endingParticles': '語尾は固定していますか？',
+                'endingParticles': '語尾の特徴は？',
                 'politePeople': '丁寧に話しかけてくる人にはどう返しますか？',
-                'closeFriends': '親友同然の人にはどのように話しかけますか？',
-                'firstMeeting': '初対面の人にはどのような態度を取りますか？',
-                'superiors': '目上の人に対してはどのような態度ですか？',
-                'children': '子どもに対してはどのような態度ですか？',
+                'closeFriends': '親しい人にはどのように話しかけますか？',
                 'laughs': 'よく笑いますか？',
-                'anger': 'よく怒りますか？',
-                'sighs': 'よくため息をつきますか？',
-                'talkLength': '話が長いですか、それとも短くまとめますか？',
-                'questions': '質問をよくしますか？',
-                'selfDisclosure': '自分のことを話しやすいですか？',
-                'jokes': '冗談を言いますか？',
-                'praise': '褒めるのは得意ですか？',
-                'criticism': '批判的に話しかけることはありますか？',
-                'preaching': '説教的になることはありますか？',
-                'empathy': '相手の話に共感を示しますか？',
-                'silence': '沈黙を避けますか？'
-            },
-            '行動パターン': {
-                'wakeTime': '朝は早く起きますか、それとも遅く起きますか？',
-                'chronotype': '夜型ですか、朝型ですか？',
-                'dailyRoutine': '1日の大半をどのように過ごしますか？',
-                'weekend': '休日は何をして過ごしますか？',
-                'socialFrequency': '友人とはどのくらいの頻度で会いますか？',
-                'alone': '一人の時間をどのように使いますか？',
-                'exercise': '運動はしますか？',
-                'cooking': '料理は得意ですか？',
-                'cleaning': '掃除は好きですか？',
-                'shopping': '買い物は好きですか？',
-                'travel': '旅行に行きますか？どのようなタイプの旅？',
-                'movies': '映画や本は好きですか？ジャンルは？',
-                'music': '音楽は好きですか？何を聴きますか？',
-                'sns': 'SNSをよく使いますか？',
-                'games': 'ゲームをしますか？',
-                'eating': '食べることは好きですか？好物は？',
-                'sweets': '甘いものは好きですか？',
-                'alcohol': 'お酒は飲みますか？',
-                'latenight': '夜更かしをしますか？',
-                'earlysleep': '早寝するほうですか？'
-            },
-            '価値観・信念': {
-                'important': '人生で最も大切なことは何ですか？',
-                'friendship': '友情についてどう考えますか？',
-                'romance': '恋愛についてどう考えますか？',
-                'work': '仕事（学業）についてどう考えますか？',
-                'money': 'お金についてどう考えますか？',
-                'family': '家族についてどう考えますか？',
-                'success': '成功の定義は何ですか？',
-                'failure': '失敗についてどう考えますか？',
-                'justice': '社会正義についてどう考えますか？',
-                'rules': 'ルールについてどう考えますか？',
-                'effort': '努力についてどう考えますか？',
-                'happiness': '幸せの定義は何ですか？',
-                'relationships': '人間関係で大切なことは何ですか？',
-                'honesty2': '正直さについてどう考えますか？',
-                'responsibility': '責任についてどう考えますか？'
-            },
-            '好みと嫌悪': {
-                'dislikedFood': '嫌いな食べ物は何ですか？',
-                'dislikedPeople': '嫌いな人のタイプは？',
-                'dislikedSituation': '嫌いな状況は？',
-                'fears': '怖いことは何ですか？',
-                'stress': 'ストレスを感じるのはどんなときですか？',
-                'season': '好きな季節は？',
-                'weather': '好きな天気は？',
-                'timeOfDay': '好きな時間帯は？',
-                'place': '好きな場所は？',
-                'smell': '好きな匂いは？',
-                'color': '好きな色は？',
-                'dislikedColor': '嫌いな色は？',
-                'dislikedSound': '嫌いな音は？',
-                'admiration': '敬意を感じる人のタイプは？',
-                'lifelong': '一生かけてやりたいことは何ですか？'
+                'talkLength': '話が長いですか、それとも短くまとめますか？'
             }
         };
 
-        let chatHistory = [];
+        let chatHistory = []; // API用コンテキスト
+        let chatLogs = [];    // 画面表示・保存用ログ
         let calendarEvents = [];
         let todoList = [];
 
@@ -654,6 +625,10 @@
             buildQuestionsUI();
             renderCalendar();
             renderTodo();
+            renderChatLogs();
+
+            // 10秒ごとにリマインダーをチェック
+            setInterval(checkReminders, 10000);
         };
 
         // テーマ切り替え
@@ -678,11 +653,27 @@
 
             document.getElementById('apiKeyInput').value = localStorage.getItem('geminiApiKey') || '';
             document.getElementById('modelNameInput').value = localStorage.getItem('geminiModelName') || 'gemini-2.5-flash';
+            
             document.getElementById('charNameInput').value = localStorage.getItem('geminiCharName') || 'エリザベス';
-            document.getElementById('welcomeCharName').innerText = localStorage.getItem('geminiCharName') || 'エリザベス';
+            document.getElementById('charFirstPerson').value = localStorage.getItem('geminiCharFirstPerson') || '私';
+            document.getElementById('charSecondPerson').value = localStorage.getItem('geminiCharSecondPerson') || 'あなた';
+            document.getElementById('charUserCall').value = localStorage.getItem('geminiCharUserCall') || 'ご主人様';
 
             calendarEvents = JSON.parse(localStorage.getItem('geminiCalendarEvents') || '[]');
             todoList = JSON.parse(localStorage.getItem('geminiTodoList') || '[]');
+            chatLogs = JSON.parse(localStorage.getItem('geminiChatLogs') || '[]');
+
+            // チャット初期メッセージがない場合のデフォルト
+            if (chatLogs.length === 0) {
+                const charName = localStorage.getItem('geminiCharName') || 'エリザベス';
+                const userCall = localStorage.getItem('geminiCharUserCall') || 'ご主人様';
+                chatLogs.push({
+                    sender: 'model',
+                    name: charName,
+                    text: `${userCall}、準備が整いましたわ。カレンダーやToDoの確認、あるいは何なりとお話しくださいませ。`
+                });
+                saveChatLogs();
+            }
         }
 
         function saveApiSettings() {
@@ -694,7 +685,10 @@
         function saveBasicCharInfo() {
             const name = document.getElementById('charNameInput').value.trim() || 'エリザベス';
             localStorage.setItem('geminiCharName', name);
-            document.getElementById('welcomeCharName').innerText = name;
+            localStorage.setItem('geminiCharFirstPerson', document.getElementById('charFirstPerson').value.trim() || '私');
+            localStorage.setItem('geminiCharSecondPerson', document.getElementById('charSecondPerson').value.trim() || 'あなた');
+            localStorage.setItem('geminiCharUserCall', document.getElementById('charUserCall').value.trim() || 'ご主人様');
+            document.getElementById('chatTitleName').innerText = `会話ログ (${name})`;
         }
 
         // 質問UI自動生成
@@ -733,20 +727,28 @@
                 if (val) answers[key] = val;
             });
             localStorage.setItem('geminiCharAnswers', JSON.stringify(answers));
-            alert('✨ 質問設定を保存し、AIに反映いたしましたわ！');
+            alert('✨ プロファイルと呼称設定をすべて反映いたしましたわ！');
         }
 
-        // --- カレンダー ---
+        // --- カレンダー & リマインダー ---
         function addEvent() {
             const title = document.getElementById('eventTitle').value.trim();
             const date = document.getElementById('eventDate').value;
             const time = document.getElementById('eventTime').value;
+            const remindMinutes = parseInt(document.getElementById('eventRemind').value);
 
             if (!title || !date) return alert('タイトルと日付を入力してください。');
 
-            calendarEvents.push({ id: Date.now(), title, date, time });
+            calendarEvents.push({
+                id: Date.now(),
+                title,
+                date,
+                time,
+                remindMinutes,
+                reminded: false
+            });
+
             calendarEvents.sort((a,b) => new Date(a.date + ' ' + (a.time||'00:00')) - new Date(b.date + ' ' + (b.time||'00:00')));
-            
             localStorage.setItem('geminiCalendarEvents', JSON.stringify(calendarEvents));
             renderCalendar();
 
@@ -771,15 +773,46 @@
             calendarEvents.forEach(e => {
                 const li = document.createElement('li');
                 li.className = 'item-card';
+                const remindText = e.remindMinutes === -1 ? '' : (e.remindMinutes === 0 ? ' [通知:時間通り]' : ` [通知:${e.remindMinutes}分前]`);
                 li.innerHTML = `
                     <div>
                         <strong>📅 ${escapeHtml(e.date)} ${e.time ? escapeHtml(e.time) : ''}</strong>
-                        <div>${escapeHtml(e.title)}</div>
+                        <div>${escapeHtml(e.title)} <span style="font-size:0.75rem; opacity:0.7;">${remindText}</span></div>
                     </div>
                     <button class="btn-danger" onclick="deleteEvent(${e.id})">削除</button>
                 `;
                 list.appendChild(li);
             });
+        }
+
+        // リマインダー監視処理
+        function checkReminders() {
+            if (calendarEvents.length === 0) return;
+
+            const now = new Date();
+            const charName = localStorage.getItem('geminiCharName') || 'エリザベス';
+            const userCall = localStorage.getItem('geminiCharUserCall') || 'ご主人様';
+            let updated = false;
+
+            calendarEvents.forEach(e => {
+                if (e.reminded || e.remindMinutes === -1 || !e.time) return;
+
+                const eventTime = new Date(`${e.date}T${e.time}`);
+                const remindTime = new Date(eventTime.getTime() - (e.remindMinutes * 60 * 1000));
+
+                // リマインド時刻を過ぎており、かつ予定時刻から1時間以内であれば通知
+                if (now >= remindTime && now < new Date(eventTime.getTime() + 3600000)) {
+                    e.reminded = true;
+                    updated = true;
+
+                    const msg = `⏰ 【お時間のリマインド】\n${userCall}、予定「${e.title}」（${e.date} ${e.time}）のお時間が近づいておりますわ！`;
+                    addChatMessage('model', charName, msg);
+                }
+            });
+
+            if (updated) {
+                localStorage.setItem('geminiCalendarEvents', JSON.stringify(calendarEvents));
+            }
         }
 
         // --- ToDo ---
@@ -827,14 +860,57 @@
             });
         }
 
-        // --- チャット処理 ---
+        // --- チャット処理 & ログ保存 ---
+        function handleKeyDown(e) {
+            if (e.key === 'Enter') {
+                if (e.shiftKey) {
+                    // Shift + Enter で改行
+                    return;
+                } else {
+                    // Enter 単体で送信
+                    e.preventDefault();
+                    sendMessage();
+                }
+            }
+        }
+
+        function saveChatLogs() {
+            localStorage.setItem('geminiChatLogs', JSON.stringify(chatLogs));
+        }
+
+        function renderChatLogs() {
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML = '';
+            chatLogs.forEach(msg => {
+                appendMessageToDOM(msg.sender, msg.name, msg.text);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function addChatMessage(sender, name, text) {
+            chatLogs.push({ sender, name, text });
+            saveChatLogs();
+            appendMessageToDOM(sender, name, text);
+            const chatBox = document.getElementById('chatBox');
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function clearChatHistory() {
+            if (confirm('会話ログを消去してもよろしいですか？')) {
+                chatLogs = [];
+                chatHistory = [];
+                saveChatLogs();
+                renderChatLogs();
+            }
+        }
+
         async function sendMessage() {
             const inputEl = document.getElementById('userInput');
             const text = inputEl.value.trim();
             if (!text) return;
 
             const charName = localStorage.getItem('geminiCharName') || 'エリザベス';
-            appendMessage('user', 'あなた', text);
+            addChatMessage('user', 'あなた', text);
             inputEl.value = '';
 
             const loadingId = appendLoadingMessage(charName);
@@ -842,23 +918,22 @@
             try {
                 const reply = await callGeminiAPI(text);
                 removeMessage(loadingId);
-                appendMessage('model', charName, reply);
+                addChatMessage('model', charName, reply);
 
                 chatHistory.push({ role: 'user', content: text });
                 chatHistory.push({ role: 'model', content: reply });
             } catch (err) {
                 removeMessage(loadingId);
-                appendMessage('model', 'システム', `⚠️ エラーが発生いたしました:\n${err.message}`);
+                addChatMessage('model', 'システム', `⚠️ エラーが発生いたしました:\n${err.message}`);
             }
         }
 
-        function appendMessage(sender, name, text) {
+        function appendMessageToDOM(sender, name, text) {
             const chatBox = document.getElementById('chatBox');
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${sender === 'user' ? 'user-msg' : 'model-msg'}`;
-            msgDiv.innerHTML = `<div class="msg-header">${escapeHtml(name)}</div><div>${escapeHtml(text).replace(/\n/g, '<br>')}</div>`;
+            msgDiv.innerHTML = `<div class="msg-header">${escapeHtml(name)}</div><div>${escapeHtml(text)}</div>`;
             chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         function appendLoadingMessage(name) {
@@ -888,6 +963,10 @@
 
         function buildSystemPrompt() {
             const charName = localStorage.getItem('geminiCharName') || 'エリザベス';
+            const firstPerson = localStorage.getItem('geminiCharFirstPerson') || '私';
+            const secondPerson = localStorage.getItem('geminiCharSecondPerson') || 'あなた';
+            const userCall = localStorage.getItem('geminiCharUserCall') || 'ご主人様';
+            
             const savedAnswers = JSON.parse(localStorage.getItem('geminiCharAnswers') || '{}');
 
             let rpSettings = '';
@@ -908,14 +987,20 @@
 
             return `あなたは${charName}というキャラクターです。
 
-以下はあなた（${charName}）の背景設定・属性・回答設定です。これらの性格・口調・価値観を徹底的に反映して対話し、なりきってください：
+以下はあなた（${charName}）の口調・呼称設定です。必ず遵守してください：
+・自分の名前: ${charName}
+・一人称: ${firstPerson}
+・二人称: ${secondPerson}
+・ユーザーの呼び方: ${userCall}
+
+【背景設定・回答プロファイル】
 ${rpSettings || '（特別なプロファイル未設定）'}
 
 【現在の共有情報】
 ・登録されている予定: ${upcomingEvents || 'なし'}
 ・未完了のToDo: ${pendingTodos || 'なし'}
 
-ユーザーからの問いかけに対し、必要に応じてカレンダーの予定やToDoにも触れつつ、上記キャラクターとして自然で魅力的な返答をしてください。`;
+ユーザーからの問いかけに対し、上記の設定・一人称・二人称・呼び方を徹底的に守り、魅力的になりきって返答してください。`;
         }
 
         async function callGeminiAPI(userMessage) {
@@ -929,17 +1014,16 @@ ${rpSettings || '（特別なプロファイル未設定）'}
 
             const contents = [
                 { role: 'user', parts: [{ text: `[システム指定・キャラクタープロファイル]\n${systemPrompt}` }] },
-                { role: 'model', parts: [{ text: `了解いたしました。プロファイルに基づき完璧になりきってお話しいたします。` }] }
+                { role: 'model', parts: [{ text: `了解いたしました。設定された一人称・二人称・呼び方を守り、完璧になりきってお話しいたします。` }] }
             ];
 
-            chatHistory.slice(-6).forEach(msg => {
+            // 直近の会話文脈を反映
+            chatLogs.slice(-8).forEach(msg => {
                 contents.push({
-                    role: msg.role === 'user' ? 'user' : 'model',
-                    parts: [{ text: msg.content }]
+                    role: msg.sender === 'user' ? 'user' : 'model',
+                    parts: [{ text: msg.text }]
                 });
             });
-
-            contents.push({ role: 'user', parts: [{ text: userMessage }] });
 
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
                 method: 'POST',
