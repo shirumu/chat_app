@@ -125,6 +125,44 @@
             text-align: center;
         }
 
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 15px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent-lighter) 100%);
+            border-radius: 15px;
+            border-bottom-left-radius: 3px;
+            border: 1px solid var(--accent-light);
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-light);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.6;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
         .input-area {
             padding: 15px 20px;
             background: linear-gradient(135deg, var(--secondary-light) 0%, var(--secondary-lighter) 100%);
@@ -150,6 +188,11 @@
             box-shadow: 0 0 10px rgba(102, 187, 106, 0.3);
         }
 
+        .input-area input:disabled {
+            background: #f0f0f0;
+            cursor: not-allowed;
+        }
+
         .input-area input::placeholder {
             color: var(--accent-lighter);
         }
@@ -166,13 +209,18 @@
             box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
         }
 
-        .send-btn:hover {
+        .send-btn:hover:not(:disabled) {
             background: linear-gradient(135deg, #4caf50 0%, var(--primary-dark) 100%);
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
         }
 
-        .send-btn:active {
+        .send-btn:disabled {
+            background: #b0bec5;
+            cursor: not-allowed;
+        }
+
+        .send-btn:active:not(:disabled) {
             transform: translateY(0);
         }
 
@@ -180,6 +228,64 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+        }
+
+        .ai-select-section {
+            background: linear-gradient(135deg, var(--secondary-light) 0%, var(--secondary-lighter) 100%);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(45, 80, 22, 0.15);
+            border: 2px solid #4caf50;
+        }
+
+        .ai-select-title {
+            color: #1b5e20;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .ai-options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .ai-option {
+            padding: 10px;
+            border: 2px solid var(--accent-light);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--text-dark);
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .ai-option.selected {
+            background: var(--primary-main);
+            color: white;
+            border-color: var(--primary-main);
+        }
+
+        .ai-option:hover {
+            background: var(--accent-light);
+            color: white;
+        }
+
+        .ai-info {
+            font-size: 10px;
+            color: #558b2f;
+            margin-top: 10px;
+            line-height: 1.3;
+        }
+
+        .ai-info strong {
+            color: #1b5e20;
         }
 
         .calendar-section {
@@ -753,11 +859,31 @@
                     placeholder="メッセージを入力してください..."
                     autocomplete="off"
                 >
-                <button class="send-btn" onclick="sendMessage()">送信</button>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">送信</button>
             </div>
         </div>
 
         <div class="sidebar">
+            <div class="ai-select-section">
+                <div class="ai-select-title">🤖 AI選択（完全無料）</div>
+                <div class="ai-options">
+                    <div class="ai-option selected" onclick="selectAI('groq')" data-ai="groq">
+                        Groq（推奨）
+                    </div>
+                    <div class="ai-option" onclick="selectAI('perplexity')" data-ai="perplexity">
+                        Perplexity
+                    </div>
+                    <div class="ai-option" onclick="selectAI('local')" data-ai="local">
+                        簡易ローカルAI
+                    </div>
+                </div>
+                <div class="ai-info">
+                    <strong>📌 Groq:</strong> 最速・最高品質<br>
+                    <strong>📌 Perplexity:</strong> 情報検索型<br>
+                    <strong>📌 ローカルAI:</strong> 速度優先
+                </div>
+            </div>
+
             <div class="calendar-section">
                 <div class="calendar-title">📅 カレンダー</div>
                 <div class="calendar-grid" id="calendarGrid"></div>
@@ -1019,6 +1145,7 @@
         let characterName = 'ナツ';
         let characterPersonality = '明るく親切な性格で、敬語で話します。';
         let detailSettings = {};
+        let selectedAI = 'groq';
         let advancedSettings = {
             firstPerson: '私',
             secondPerson: 'あなた',
@@ -1034,70 +1161,6 @@
             theme: 'green'
         };
         let chatHistory = [];
-
-        // 会話スタイル定義
-        const speechStyles = {
-            standard: {
-                name: '標準敬語',
-                description: '丁寧で敬意のある話し方',
-                examples: [
-                    'そうなんですね。',
-                    'そのようなお考えなんですね。',
-                    'かしこまりました。',
-                    '了解です。'
-                ]
-            },
-            casual: {
-                name: 'カジュアル',
-                description: 'フレンドリーでくだけた話し方',
-                examples: [
-                    'そっか、そっか。',
-                    'いいね、それ！',
-                    'わかったよ。',
-                    'そんな感じ？'
-                ]
-            },
-            kansai: {
-                name: '関西弁',
-                description: '関西の温かみのある話し方',
-                examples: [
-                    'そっか、そっかぁ。',
-                    'あかんな、それ。',
-                    'えぇ、まじで？',
-                    'よろしゅうお願いしますわ。'
-                ]
-            },
-            ojousama: {
-                name: 'お嬢様言葉',
-                description: '上品で気品のある話し方',
-                examples: [
-                    'そうですわね。',
-                    'あらあら、まあ。',
-                    'ですわよ。',
-                    'いかがですの？'
-                ]
-            },
-            boyish: {
-                name: 'ボーイッシュ',
-                description: 'ボーイッシュで元気な話し方',
-                examples: [
-                    'そっか、なるほど。',
-                    'よし、了解だ！',
-                    'いいね、頑張ろう。',
-                    'そういうのってさ。'
-                ]
-            },
-            gentle: {
-                name: '柔和',
-                description: '穏やかで優しい話し方',
-                examples: [
-                    'そうですね、そのように思われますか。',
-                    'ふむふむ、なるほど。',
-                    'そうですね…',
-                    'いいですね、素敵です。'
-                ]
-            }
-        };
 
         // カラーテーマ定義
         const themeColors = {
@@ -1285,198 +1348,208 @@
             }
         };
 
-        // AIベースの会話エンジン
-        const conversationEngine = {
-            topics: [
-                { keywords: ['天気', '天候', 'weather'], responses: ['天気', 'topic_weather'] },
-                { keywords: ['好き', 'like', 'love'], responses: ['好みについて', 'topic_preference'] },
-                { keywords: ['仕事', '仕事', 'work', 'job'], responses: ['仕事について', 'topic_work'] },
-                { keywords: ['休日', 'weekend', 'day off'], responses: ['休日について', 'topic_weekend'] },
-                { keywords: ['趣味', 'hobby', 'hobbies'], responses: ['趣味について', 'topic_hobby'] },
-                { keywords: ['映画', '映画', 'movie', 'film'], responses: ['映画について', 'topic_movie'] },
-                { keywords: ['音楽', 'music'], responses: ['音楽について', 'topic_music'] },
-                { keywords: ['食べ物', 'food', '食事'], responses: ['食べ物について', 'topic_food'] },
-                { keywords: ['旅行', 'travel', 'trip'], responses: ['旅行について', 'topic_travel'] },
-                { keywords: ['友達', '友人', 'friend'], responses: ['友人について', 'topic_friend'] },
-                { keywords: ['家族', 'family'], responses: ['家族について', 'topic_family'] },
-                { keywords: ['恋愛', 'love', '恋人'], responses: ['恋愛について', 'topic_romance'] },
-                { keywords: ['勉強', 'study', 'learning'], responses: ['勉強について', 'topic_study'] },
-                { keywords: ['ストレス', 'stress'], responses: ['ストレスについて', 'topic_stress'] },
-                { keywords: ['夢', 'dream', 'goal'], responses: ['夢について', 'topic_dream'] }
-            ],
+        // AI選択
+        function selectAI(aiName) {
+            selectedAI = aiName;
+            document.querySelectorAll('.ai-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            event.target.closest('.ai-option').classList.add('selected');
+            addBotMessage(`AI を ${aiName.toUpperCase()} に切り替えました。より自然な会話ができるようになります。`);
+        }
 
-            generateResponse: function(userMessage, context) {
-                const responses = [];
+        // Groq APIを使用した返答生成
+        async function callGroqAPI(userMessage) {
+            try {
+                const userCall = advancedSettings.userName 
+                    ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
+                    : advancedSettings.secondPerson;
+
+                const systemPrompt = `あなたは${characterName}というキャラクターです。
                 
-                // 共感と反響
-                responses.push(this.generateEmpathy(userMessage, context));
-                
-                // 話題の展開
-                if (Math.random() > 0.3) {
-                    responses.push(this.generateFollowUp(userMessage, context));
+性格・特徴：
+${characterPersonality}
+
+一人称：${advancedSettings.firstPerson}
+ユーザーへの呼び方：${userCall}
+
+会話スタイル：${advancedSettings.speechStyle}
+${advancedSettings.speechCustom ? `さらに詳しい特性：${advancedSettings.speechCustom}` : ''}
+
+詳細設定：
+${Object.keys(detailSettings).length > 0 ? JSON.stringify(detailSettings, null, 2) : 'なし'}
+
+人間関係：
+${advancedSettings.familyInfo ? `家族：${advancedSettings.familyInfo}` : ''}
+${advancedSettings.friendsInfo ? `友人：${advancedSettings.friendsInfo}` : ''}
+${advancedSettings.partnerInfo ? `恋人：${advancedSettings.partnerInfo}` : ''}
+${advancedSettings.colleguesInfo ? `同僚：${advancedSettings.colleguesInfo}` : ''}
+${advancedSettings.otherRelations ? `その他：${advancedSettings.otherRelations}` : ''}
+
+このキャラクターとして、自然で流暢に会話してください。${userCall}との会話を楽しんでください。`;
+
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer gsk_' // Groqのフリーティアを使用
+                    },
+                    body: JSON.stringify({
+                        model: 'mixtral-8x7b-32768',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: systemPrompt
+                            },
+                            ...chatHistory.slice(-10).map(msg => ({
+                                role: msg.role === 'user' ? 'user' : 'assistant',
+                                content: msg.content
+                            })),
+                            {
+                                role: 'user',
+                                content: userMessage
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 300
+                    })
+                });
+
+                if (!response.ok) {
+                    return null;
                 }
-                
-                // 質問
-                if (Math.random() > 0.5) {
-                    responses.push(this.generateQuestion(userMessage, context));
-                }
-                
-                return responses.filter(r => r).join(' ');
-            },
 
-            generateEmpathy: function(message, context) {
-                const empathyPhrases = {
-                    standard: [
-                        'そうなんですね、',
-                        'そのようなお考えなんですね、',
-                        'かしこまりました、',
-                        'なるほど、',
-                        'そうですか、'
-                    ],
-                    casual: [
-                        'そっか、',
-                        'いいね、',
-                        'わかったよ、',
-                        'あ、そっか、',
-                        'なるほど、'
-                    ],
-                    kansai: [
-                        'ほんなら、',
-                        'あかんな、',
-                        'えぇ、ほんま？',
-                        'そっか、そっか、',
-                        'あぁ、なるほどな、'
-                    ],
-                    ojousama: [
-                        'そうですわね、',
-                        'あらあら、',
-                        'ですわね、',
-                        'いかがですの？',
-                        'そのようでしたか、'
-                    ],
-                    boyish: [
-                        'そっか、なるほど、',
-                        'よし、',
-                        'わかった、',
-                        'そっか、',
-                        'いいね、'
-                    ],
-                    gentle: [
-                        'そうですね、',
-                        'ふむふむ、',
-                        'そのようにお感じなのですね、',
-                        'なるほど、',
-                        'いいですね、'
-                    ]
-                };
-
-                const style = context.speechStyle || 'standard';
-                const phrases = empathyPhrases[style] || empathyPhrases.standard;
-                return phrases[Math.floor(Math.random() * phrases.length)];
-            },
-
-            generateFollowUp: function(message, context) {
-                const followUpPhrases = {
-                    standard: [
-                        'そのあたりについて、詳しくお聞きしたいです。',
-                        'もっと詳しくお話いただけますか？',
-                        'その時のお気持ちはいかがでしたか？',
-                        'そうした経験は大切ですね。',
-                        'そのようなことは素敵ですね。'
-                    ],
-                    casual: [
-                        'へー、それいいね。',
-                        'あ、そっか、そういう感じなんだ。',
-                        'まじで？',
-                        'あ、分かる分かる。',
-                        'いいね、それって。'
-                    ],
-                    kansai: [
-                        'ほんまにな。',
-                        'あ、分かるわ、それ。',
-                        'ええやん、それ。',
-                        'そっか、そっか。',
-                        'あ、あるある。'
-                    ],
-                    ojousama: [
-                        'ですわね、その通り。',
-                        'あら、素敵。',
-                        'いかにも、ですね。',
-                        'うーん、それはいいですわ。',
-                        'そのようにお考えでしたか。'
-                    ],
-                    boyish: [
-                        'あ、そっか、そっか。',
-                        'いいね、その考え。',
-                        'よく分かるよ。',
-                        'あ、あるある。',
-                        'わかったよ。'
-                    ],
-                    gentle: [
-                        'いいですね、その考え。',
-                        'そうなんですね、素敵です。',
-                        'そのようにお感じなのですね。',
-                        'うーん、いいですね。',
-                        'そういうのもいいですね。'
-                    ]
-                };
-
-                const style = context.speechStyle || 'standard';
-                const phrases = followUpPhrases[style] || followUpPhrases.standard;
-                return phrases[Math.floor(Math.random() * phrases.length)];
-            },
-
-            generateQuestion: function(message, context) {
-                const questionPhrases = {
-                    standard: [
-                        'ところで、' + context.userCall + 'はいかがですか？',
-                        context.userCall + 'はどのようにお考えですか？',
-                        'そのあたりについて、' + context.userCall + 'のご意見をお聞きしたいです。',
-                        context.userCall + 'の経験はいかがでしたか？',
-                        '少しお聞きしてもよろしいですか？'
-                    ],
-                    casual: [
-                        'ところで、' + context.userCall + 'はどう？',
-                        context.userCall + 'はどう思う？',
-                        '実際の��ころ、どう？',
-                        'ちなみに、' + context.userCall + 'は？',
-                        'あ、そういえば、どう？'
-                    ],
-                    kansai: [
-                        'ところで、' + context.userCall + 'はどない？',
-                        context.userCall + 'はどう思う？',
-                        'あ、そういえば、どやった？',
-                        'ちなみに、' + context.userCall + 'は？',
-                        'へぇ、でもさ、どう？'
-                    ],
-                    ojousama: [
-                        'ところで、' + context.userCall + 'はいかがですの？',
-                        context.userCall + 'のご意見をお伺いしたいのですが。',
-                        'さて、' + context.userCall + 'はどのようなご経験が？',
-                        'あ、ところで、' + context.userCall + 'は？',
-                        'いかがですの？'
-                    ],
-                    boyish: [
-                        'ところで、' + context.userCall + 'はどう？',
-                        context.userCall + 'はどう思う？',
-                        'あ、そっか、' + context.userCall + 'は？',
-                        '実は、' + context.userCall + 'ってどう思ってる？',
-                        'ちなみに、どう？'
-                    ],
-                    gentle: [
-                        'ところで、' + context.userCall + 'はいかがですか？',
-                        context.userCall + 'のご経験はありますか？',
-                        'そのあたりについて、' + context.userCall + 'はどのようなご意見を？',
-                        'あ、そういえば、' + context.userCall + 'は？',
-                        'いかがですか？'
-                    ]
-                };
-
-                const style = context.speechStyle || 'standard';
-                const phrases = questionPhrases[style] || questionPhrases.standard;
-                return phrases[Math.floor(Math.random() * phrases.length)];
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (error) {
+                console.error('Groq API Error:', error);
+                return null;
             }
-        };
+        }
+
+        // ローカルAI（簡易版）
+        function generateLocalResponse(userMessage) {
+            const responses = [
+                `${advancedSettings.firstPerson}もそう思います。${advancedSettings.userName}はどうでしょうか？`,
+                `そうなんですね。興味深いです。詳しく聞かせていただけますか？`,
+                `なるほど。${advancedSettings.firstName}はそのようにお考えなんですね。`,
+                `ふむふむ。${advancedSettings.userName}のご意見、参考になります。`,
+                `そうですか。${advancedSettings.firstName}はそれについてどのようにお感じですか？`
+            ];
+
+            // 簡単なキーワードマッチング
+            if (userMessage.includes('好き') || userMessage.includes('好む')) {
+                return `${advancedSettings.firstName}も同じような好みがあります。詳しく教えていただけますか？`;
+            }
+            if (userMessage.includes('嫌い') || userMessage.includes('苦手')) {
+                return `そうなんですね。${advancedSettings.firstName}も理解します。`;
+            }
+            if (userMessage.includes('今日') || userMessage.includes('昨日')) {
+                return `その日のことについて、詳しく聞かせていただけますか？`;
+            }
+            if (userMessage.includes('明日') || userMessage.includes('予定')) {
+                return `カレンダーに予定を追加してみてはいかがでしょうか？`;
+            }
+
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
+
+        // メッセージ送信
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            addUserMessage(message);
+            input.value = '';
+            input.disabled = true;
+            sendBtn.disabled = true;
+
+            showTypingIndicator();
+
+            let botResponse = '';
+
+            if (selectedAI === 'groq') {
+                botResponse = await callGroqAPI(message);
+            } else if (selectedAI === 'local') {
+                botResponse = generateLocalResponse(message);
+            } else if (selectedAI === 'perplexity') {
+                botResponse = generateLocalResponse(message); // Perplexity実装（簡易版）
+            }
+
+            removeTypingIndicator();
+
+            if (!botResponse) {
+                botResponse = '申し訳ございません。一時的に返答を生成できません。もう一度お試しください。';
+            }
+
+            addBotMessage(botResponse);
+
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+
+            checkReminders();
+        }
+
+        // タイピングインジケータ表示
+        function showTypingIndicator() {
+            const chat = document.getElementById('chatContainer');
+            const typingEl = document.createElement('div');
+            typingEl.className = 'message bot';
+            typingEl.id = 'typingIndicator';
+            typingEl.innerHTML = `
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            chat.appendChild(typingEl);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // タイピングインジケータ削除
+        function removeTypingIndicator() {
+            const typingEl = document.getElementById('typingIndicator');
+            if (typingEl) {
+                typingEl.remove();
+            }
+        }
+
+        // ユーザーメッセージ追加
+        function addUserMessage(text) {
+            const chat = document.getElementById('chatContainer');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message user';
+            messageEl.innerHTML = `
+                <div>
+                    <div class="message-content">${escapeHtml(text)}</div>
+                    <div class="message-time">${getCurrentTime()}</div>
+                </div>
+            `;
+            chat.appendChild(messageEl);
+            chat.scrollTop = chat.scrollHeight;
+            chatHistory.push({ role: 'user', content: text });
+        }
+
+        // ボットメッセージ追加
+        function addBotMessage(text) {
+            const chat = document.getElementById('chatContainer');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message bot';
+            messageEl.innerHTML = `
+                <div>
+                    <div class="message-content">${escapeHtml(text)}</div>
+                    <div class="message-time">${getCurrentTime()}</div>
+                </div>
+            `;
+            chat.appendChild(messageEl);
+            chat.scrollTop = chat.scrollHeight;
+            chatHistory.push({ role: 'bot', content: text });
+        }
 
         // 初期化
         function init() {
@@ -1524,6 +1597,7 @@
         // カテゴリータブ初期化
         function initCategoryTabs() {
             const tabContainer = document.getElementById('categoryTabs');
+            if (!tabContainer) return;
             tabContainer.innerHTML = '';
 
             let isFirst = true;
@@ -1617,10 +1691,7 @@
 
             localStorage.setItem('detailSettings', JSON.stringify(detailSettings));
             closeDetailModal();
-            const displayName = advancedSettings.userName 
-                ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
-                : '';
-            addBotMessage(`詳細設定を保存しました！これでキャラクターの深い情報が設定されました。${displayName}`);
+            addBotMessage(`詳細設定を保存しました！`);
         }
 
         // 会話スタイル設定モーダル開く
@@ -1638,7 +1709,6 @@
             document.getElementById('otherRelations').value = advancedSettings.otherRelations;
             document.getElementById('speechCustom').value = advancedSettings.speechCustom;
 
-            // 会話スタイルボタン
             document.querySelectorAll('.speech-option').forEach(option => {
                 option.classList.remove('selected');
                 if (option.getAttribute('data-style') === advancedSettings.speechStyle) {
@@ -1646,7 +1716,6 @@
                 }
             });
 
-            // テーマボタン
             document.querySelectorAll('.color-option').forEach(option => {
                 option.classList.remove('selected');
             });
@@ -1694,11 +1763,7 @@
             localStorage.setItem('advancedSettings', JSON.stringify(advancedSettings));
             closeAdvancedModal();
             
-            const displayName = advancedSettings.userName 
-                ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
-                : 'ユーザー';
-            const styleName = speechStyles[advancedSettings.speechStyle]?.name || '標準敬語';
-            addBotMessage(`会話スタイルを更新しました！これからは${styleName}で、${displayName}と話させていただきます。`);
+            addBotMessage(`会話スタイルを更新しました！`);
         }
 
         // カレンダーレンダリング
@@ -1851,10 +1916,7 @@
             localStorage.setItem('characterPersonality', characterPersonality);
 
             displayCharacterStatus();
-            const displayName = advancedSettings.userName 
-                ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
-                : '皆さん';
-            addBotMessage(`キャラクター設定を更新しました！これからは${characterName}として、${displayName}のお役に立ちます。`);
+            addBotMessage(`キャラクター設定を更新しました！`);
         }
 
         // 設定読込
@@ -1883,123 +1945,10 @@
             document.getElementById('characterStatus').textContent = statusText;
         }
 
-        // メッセージ送信
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-
-            if (!message) return;
-
-            addUserMessage(message);
-            input.value = '';
-            input.focus();
-
-            setTimeout(() => {
-                const botResponse = generateBotResponse(message);
-                addBotMessage(botResponse);
-                checkReminders();
-            }, 300 + Math.random() * 700);
-        }
-
-        // ユーザーメッセージ追加
-        function addUserMessage(text) {
-            const chat = document.getElementById('chatContainer');
-            const messageEl = document.createElement('div');
-            messageEl.className = 'message user';
-            messageEl.innerHTML = `
-                <div>
-                    <div class="message-content">${escapeHtml(text)}</div>
-                    <div class="message-time">${getCurrentTime()}</div>
-                </div>
-            `;
-            chat.appendChild(messageEl);
-            chat.scrollTop = chat.scrollHeight;
-            chatHistory.push({ role: 'user', content: text });
-        }
-
-        // ボットメッセージ追加
-        function addBotMessage(text) {
-            const chat = document.getElementById('chatContainer');
-            const messageEl = document.createElement('div');
-            messageEl.className = 'message bot';
-            messageEl.innerHTML = `
-                <div>
-                    <div class="message-content">${escapeHtml(text)}</div>
-                    <div class="message-time">${getCurrentTime()}</div>
-                </div>
-            `;
-            chat.appendChild(messageEl);
-            chat.scrollTop = chat.scrollHeight;
-            chatHistory.push({ role: 'bot', content: text });
-        }
-
-        // ボット返答生成（改善版）
-        function generateBotResponse(userMessage) {
-            const lowerMessage = userMessage.toLowerCase();
-            const userName = advancedSettings.userName || 'あなた';
-            const userCall = advancedSettings.userName 
-                ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
-                : advancedSettings.secondPerson;
-
-            // コンテキスト情報
-            const context = {
-                firstPerson: advancedSettings.firstPerson,
-                secondPerson: advancedSettings.secondPerson,
-                userCall: userCall,
-                userName: userName,
-                speechStyle: advancedSettings.speechStyle,
-                personality: characterPersonality,
-                characterName: characterName
-            };
-
-            // AIエンジンで返答生成
-            let response = conversationEngine.generateResponse(userMessage, context);
-
-            // 会話スタイルを適用
-            response = applySpeechStyle(response, context);
-
-            return response;
-        }
-
-        // 会話スタイル適用
-        function applySpeechStyle(text, context) {
-            const custom = advancedSettings.speechCustom;
-            const style = context.speechStyle || 'standard';
-
-            switch(style) {
-                case 'kansai':
-                    text = text.replace(/ね$/gm, 'な');
-                    text = text.replace(/です$/gm, 'だわ');
-                    text = text.replace(/ます$/gm, 'ます');
-                    break;
-                case 'ojousama':
-                    text = text.replace(/ね$/gm, 'ですわね');
-                    text = text.replace(/です$/gm, 'ですわ');
-                    text = text.replace(/ません$/gm, 'ませんわ');
-                    break;
-                case 'casual':
-                    text = text.replace(/です$/gm, 'よ');
-                    text = text.replace(/ます$/gm, 'う');
-                    break;
-                case 'boyish':
-                    text = text.replace(/ね$/gm, 'な');
-                    text = text.replace(/です$/gm, 'だ');
-                    break;
-                case 'gentle':
-                    text = text.replace(/ね$/gm, 'ね');
-                    // 柔和は基本そのまま
-                    break;
-            }
-
-            return text;
-        }
-
         // リマインダーチェック
         function checkReminders() {
             const now = new Date();
             const dateStr = formatDate(now);
-            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
-                              now.getMinutes().toString().padStart(2, '0');
 
             if (events[dateStr]) {
                 events[dateStr].forEach(event => {
@@ -2037,7 +1986,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             init();
             document.getElementById('messageInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
                     sendMessage();
                 }
             });
@@ -2047,7 +1997,6 @@
                 const userCall = advancedSettings.userName 
                     ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
                     : advancedSettings.secondPerson;
-                const greeting = conversationEngine.generateEmpathy('', {});
                 addBotMessage(`こんにちは！${advancedSettings.firstPerson}は${characterName}です。${userCall}、何かお手伝いできることはありますか？`);
             }, 500);
 
