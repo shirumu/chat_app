@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini AI Chat App</title>
+    <title>Gemini AI アシスタント & RP チャット</title>
     <style>
         :root {
-            --bg-color: #f0f2f5;
+            --bg-color: #f4f6f9;
             --card-bg: #ffffff;
             --text-color: #2c3e50;
             --primary-color: #4a69bd;
             --primary-hover: #3c5496;
-            --user-msg-bg: #4a69bd;
-            --user-msg-text: #ffffff;
-            --model-msg-bg: #f1f2f6;
-            --model-msg-text: #2f3542;
+            --accent-color: #e1b12c;
+            --danger-color: #e84118;
             --border-color: #dcdde1;
         }
 
@@ -23,24 +21,24 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             justify-content: center;
         }
 
         .container {
             width: 100%;
-            max-width: 850px;
+            max-width: 900px;
             background: var(--card-bg);
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            height: 90vh;
+            height: 92vh;
         }
 
-        /* ヘッダー＆タブバー */
+        /* ヘッダー＆タブ */
         .header {
             background: #2f3542;
             color: #ffffff;
@@ -52,26 +50,29 @@
 
         .header h1 {
             margin: 0;
-            font-size: 1.15rem;
+            font-size: 1.2rem;
             font-weight: 600;
         }
 
         .tabs {
             display: flex;
             background: #57606f;
+            overflow-x: auto;
         }
 
         .tab-btn {
             flex: 1;
-            padding: 12px;
+            min-width: 110px;
+            padding: 12px 8px;
             border: none;
             background: transparent;
             color: #dcdde1;
-            font-size: 0.95rem;
+            font-size: 0.88rem;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
             border-bottom: 3px solid transparent;
+            white-space: nowrap;
         }
 
         .tab-btn.active {
@@ -80,7 +81,7 @@
             border-bottom-color: var(--primary-color);
         }
 
-        /* コンテンツエリア */
+        /* コンテンツ表示エリア */
         .tab-content {
             display: none;
             flex: 1;
@@ -93,7 +94,7 @@
             flex-direction: column;
         }
 
-        /* チャット画面 */
+        /* チャット */
         #chat-tab {
             padding: 0;
         }
@@ -118,15 +119,15 @@
 
         .user-msg {
             align-self: flex-end;
-            background-color: var(--user-msg-bg);
-            color: var(--user-msg-text);
+            background-color: var(--primary-color);
+            color: #ffffff;
             border-bottom-right-radius: 2px;
         }
 
         .model-msg {
             align-self: flex-start;
-            background-color: var(--model-msg-bg);
-            color: var(--model-msg-text);
+            background-color: #f1f2f6;
+            color: #2f3542;
             border-bottom-left-radius: 2px;
         }
 
@@ -151,15 +152,10 @@
             border: 1px solid var(--border-color);
             border-radius: 6px;
             font-size: 0.95rem;
-            outline: none;
         }
 
-        .input-area input[type="text"]:focus {
-            border-color: var(--primary-color);
-        }
-
-        .btn-send {
-            padding: 12px 24px;
+        .btn-main {
+            padding: 10px 20px;
             background-color: var(--primary-color);
             color: white;
             border: none;
@@ -169,13 +165,13 @@
             transition: background 0.2s;
         }
 
-        .btn-send:hover {
+        .btn-main:hover {
             background-color: var(--primary-hover);
         }
 
-        /* 設定画面 */
+        /* 共通フォームスタイル */
         .section-title {
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: bold;
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 6px;
@@ -185,18 +181,18 @@
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .form-group label {
             display: block;
             font-weight: bold;
-            margin-bottom: 6px;
-            font-size: 0.88rem;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
             color: #485460;
         }
 
-        .form-group input, .form-group textarea {
+        .form-group input, .form-group textarea, .form-group select {
             width: 100%;
             padding: 10px;
             border: 1px solid var(--border-color);
@@ -205,34 +201,69 @@
             font-size: 0.9rem;
         }
 
-        .form-group textarea {
-            resize: vertical;
-        }
-
         .form-row {
             display: flex;
-            gap: 15px;
+            gap: 10px;
         }
 
         .form-row .form-group {
             flex: 1;
         }
 
-        .btn-save {
-            padding: 12px 20px;
-            background-color: #2ed573;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 0.95rem;
-            margin-top: 10px;
-            transition: background 0.2s;
+        /* カレンダー・ToDo・質問設定リスト */
+        .item-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
         }
 
-        .btn-save:hover {
-            background-color: #26af5f;
+        .item-card {
+            background: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-card.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* アコーディオン・質問カテゴリー */
+        .cat-box {
+            background: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            padding: 15px;
+        }
+
+        .cat-box h3 {
+            margin-top: 0;
+            font-size: 1rem;
+            color: #2f3542;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .q-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 10px;
         }
 
         .loading-dots {
@@ -246,14 +277,16 @@
     <div class="container">
         <!-- ヘッダー -->
         <div class="header">
-            <h1>Gemini AI Chat</h1>
+            <h1>Gemini AI 統合パートナー</h1>
         </div>
 
         <!-- タブナビゲーション -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('chat-tab')">💬 チャット</button>
-            <button class="tab-btn" onclick="switchTab('basic-settings-tab')">⚙️ 基本・接続設定</button>
-            <button class="tab-btn" onclick="switchTab('char-settings-tab')">🎭 キャラ・詳細設定</button>
+            <button class="tab-btn" onclick="switchTab('calendar-tab')">📅 カレンダー</button>
+            <button class="tab-btn" onclick="switchTab('todo-tab')">✅ やること</button>
+            <button class="tab-btn" onclick="switchTab('questions-tab')">🎭 RP質問設定</button>
+            <button class="tab-btn" onclick="switchTab('basic-tab')">⚙️ API設定</button>
         </div>
 
         <!-- 1. チャットタブ -->
@@ -261,227 +294,416 @@
             <div class="chat-container" id="chatBox">
                 <div class="message model-msg">
                     <div class="msg-header" id="welcomeCharName">エリザベス</div>
-                    <div>ご主人様、準備が整いましたわ。何なりとお申し付けくださいませ。</div>
+                    <div>ご主人様、準備が整いましたわ。カレンダーやToDoの確認、あるいは何なりとお話しくださいませ。</div>
                 </div>
             </div>
             <div class="input-area">
                 <input type="text" id="userInput" placeholder="メッセージを入力..." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button class="btn-send" onclick="sendMessage()">送信</button>
+                <button class="btn-main" onclick="sendMessage()">送信</button>
             </div>
         </div>
 
-        <!-- 2. 基本設定タブ -->
-        <div id="basic-settings-tab" class="tab-content">
-            <div class="section-title">🔑 API ＆ モデル接続設定</div>
+        <!-- 2. カレンダー・リマインダー タブ -->
+        <div id="calendar-tab" class="tab-content">
+            <div class="section-title">📅 予定＆リマインダーの追加</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>予定タイトル:</label>
+                    <input type="text" id="eventTitle" placeholder="例: 書籍の打合せ">
+                </div>
+                <div class="form-group">
+                    <label>日付:</label>
+                    <input type="date" id="eventDate">
+                </div>
+                <div class="form-group">
+                    <label>時間:</label>
+                    <input type="time" id="eventTime">
+                </div>
+            </div>
+            <button class="btn-main" onclick="addEvent()">予定を追加</button>
+
+            <div class="section-title">登録済みの予定一覧</div>
+            <ul id="eventList" class="item-list"></ul>
+        </div>
+
+        <!-- 3. やることリスト（ToDo）タブ -->
+        <div id="todo-tab" class="tab-content">
+            <div class="section-title">✅ 新しいタスクを追加</div>
+            <div class="form-row">
+                <div class="form-group" style="flex:3;">
+                    <input type="text" id="todoInput" placeholder="やることを入力...">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <button class="btn-main" style="width:100%;" onclick="addTodo()">追加</button>
+                </div>
+            </div>
+
+            <div class="section-title">タスク一覧</div>
+            <ul id="todoList" class="item-list"></ul>
+        </div>
+
+        <!-- 4. RP質問設定タブ -->
+        <div id="questions-tab" class="tab-content">
+            <div class="section-title">🎭 キャラクター詳細プロファイル（RP反映用）</div>
+            <p style="font-size:0.85rem; color:#666;">ここで回答を入力した項目は、AIが返信を作成する際に背景設定や口調として強く意識しますわ。</p>
+            
+            <div class="form-group">
+                <label>キャラクター名 (基本設定):</label>
+                <input type="text" id="charNameInput" value="エリザベス" onchange="saveBasicCharInfo()">
+            </div>
+
+            <div id="questionsContainer"></div>
+
+            <button class="btn-main" style="margin-top:15px; padding:12px;" onclick="saveAllQuestions()">質問回答を保存してAIに反映</button>
+        </div>
+
+        <!-- 5. API基本設定タブ -->
+        <div id="basic-tab" class="tab-content">
+            <div class="section-title">⚙️ 接続設定</div>
             <div class="form-group">
                 <label>Gemini APIキー:</label>
-                <input type="password" id="apiKeyInput" placeholder="AI Studioで取得したAPIキーを入力">
+                <input type="password" id="apiKeyInput" placeholder="APIキーを入力">
             </div>
             <div class="form-group">
                 <label>使用モデル名:</label>
-                <input type="text" id="modelNameInput" value="gemini-1.5-flash" placeholder="例: gemini-1.5-flash, gemini-2.0-flash">
+                <input type="text" id="modelNameInput" value="gemini-2.5-flash" placeholder="gemini-2.5-flash">
             </div>
-            <button class="btn-save" onclick="saveSettings()">基本設定を保存</button>
-        </div>
-
-        <!-- 3. キャラクター・詳細設定タブ -->
-        <div id="char-settings-tab" class="tab-content">
-            <div class="section-title">🎭 キャラクター基本設定</div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>キャラクター名:</label>
-                    <input type="text" id="charNameInput" value="エリザベス">
-                </div>
-                <div class="form-group">
-                    <label>一人称:</label>
-                    <input type="text" id="firstPersonInput" value="私">
-                </div>
-                <div class="form-group">
-                    <label>二人称（ユーザーの呼び方）:</label>
-                    <input type="text" id="secondPersonInput" value="ご主人様">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>性格・全体設定:</label>
-                <textarea id="charPersonalityInput" rows="2">丁寧で上品なメイド。〜ですわ、〜ございますなどの口調。</textarea>
-            </div>
-
-            <div class="section-title">👤 ユーザープロファイル・口調詳細</div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>ユーザーの本名 (userName):</label>
-                    <input type="text" id="userNameInput" placeholder="例: 太郎">
-                </div>
-                <div class="form-group">
-                    <label>ユーザーの愛称 (userNickname):</label>
-                    <input type="text" id="userNicknameInput" placeholder="例: 様">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>口調スタイル (speechStyle):</label>
-                    <input type="text" id="speechStyleInput" value="丁寧・お嬢様/メイド風">
-                </div>
-                <div class="form-group">
-                    <label>語尾・口調カスタム (speechCustom):</label>
-                    <input type="text" id="speechCustomInput" placeholder="例: 語尾に「〜ですわ」を付ける">
-                </div>
-            </div>
-
-            <div class="section-title">🛠️ 詳細設定 (JSON形式)</div>
-            <div class="form-group">
-                <label>詳細プロンプト設定 (detailSettings):</label>
-                <textarea id="detailSettingsInput" rows="4" placeholder='{"mood": "happy", "relationship": "master_and_servant"}'>{}</textarea>
-            </div>
-
-            <button class="btn-save" onclick="saveSettings()">全キャラクター設定を保存</button>
+            <button class="btn-main" onclick="saveApiSettings()">設定を保存</button>
         </div>
     </div>
 
     <script>
-        // グローバル状態
-        let chatHistory = [];
-
-        // ページ読み込み時に設定を復元
-        window.onload = function() {
-            loadSavedSettings();
+        // 質問カテゴリー定義（ご提示いただいたデータ）
+        const questionCategories = {
+            '基本属性': {
+                'name': 'キャラクターの名前は何ですか？',
+                'age': '年齢または年代は？',
+                'gender': '性別または性自認は？',
+                'occupation': '職業や立場は？',
+                'birthplace': '出身地や住んでいる地域は？',
+                'appearance': '身長や体格の特徴は？',
+                'features': '外見的な特徴（髪型、目の色など）は？',
+                'firstImpression': '第一印象でどのような人に見えますか？',
+                'hobbies': '趣味は何ですか？（3-5個）',
+                'strengths': '得意なことは何ですか？'
+            },
+            '性格・気質': {
+                'temperament': '基本的な性格は明るい方ですか、それとも落ち着いている方ですか？',
+                'sociability': '社交的ですか、それとも内向的ですか？',
+                'perfectionism': '完璧主義者ですか、それとものんびり屋ですか？',
+                'logic': '論理的ですか、それとも直感的ですか？',
+                'decisiveness': '優柔不断ですか、それとも決断力がありますか？',
+                'outlook': 'プラス思考ですか、それともマイナス思考ですか？',
+                'impulsive': '衝動的ですか、それとも慎重ですか？',
+                'humor': 'ユーモア好きですか？どのような冗談を好みますか？',
+                'tidiness': '几帳面ですか、それとも大雑把ですか？',
+                'emotions': '感情的になりやすいですか？',
+                'dependency': '人に頼りやすいですか？',
+                'leadership': 'リーダーシップはありますか？',
+                'competitiveness': '競争心が強いですか？',
+                'challenge': '新しいことに挑戦するのは好きですか？',
+                'changePreference': '変化を好みますか、それとも安定を好みますか？',
+                'discretion': '秘密を守ることができますか？',
+                'honesty': '嘘をつきやすいですか？',
+                'pride': 'プライドは高いですか？',
+                'confidence': '自信がありますか？',
+                'listening': '人の話を聞くのが得意ですか？'
+            },
+            '口調・言語表現': {
+                'basicTone': '話すときの基本的な口調は敬語ですか、それともカジュアルですか？',
+                'catchphrases': 'よく使う口癖はありますか？',
+                'endingParticles': '語尾は固定していますか？',
+                'politePeople': '丁寧に話しかけてくる人にはどう返しますか？',
+                'closeFriends': '親友同然の人にはどのように話しかけますか？',
+                'firstMeeting': '初対面の人にはどのような態度を取りますか？',
+                'superiors': '目上の人に対してはどのような態度ですか？',
+                'children': '子どもに対してはどのような態度ですか？',
+                'laughs': 'よく笑いますか？',
+                'anger': 'よく怒りますか？',
+                'sighs': 'よくため息をつきますか？',
+                'talkLength': '話が長いですか、それとも短くまとめますか？',
+                'questions': '質問をよくしますか？',
+                'selfDisclosure': '自分のことを話しやすいですか？',
+                'jokes': '冗談を言いますか？',
+                'praise': '褒めるのは得意ですか？',
+                'criticism': '批判的に話しかけることはありますか？',
+                'preaching': '説教的になることはありますか？',
+                'empathy': '相手の話に共感を示しますか？',
+                'silence': '沈黙を避けますか？'
+            },
+            '行動パターン': {
+                'wakeTime': '朝は早く起きますか、それとも遅く起きますか？',
+                'chronotype': '夜型ですか、朝型ですか？',
+                'dailyRoutine': '1日の大半をどのように過ごしますか？',
+                'weekend': '休日は何をして過ごしますか？',
+                'socialFrequency': '友人とはどのくらいの頻度で会いますか？',
+                'alone': '一人の時間をどのように使いますか？',
+                'exercise': '運動はしますか？',
+                'cooking': '料理は得意ですか？',
+                'cleaning': '掃除は好きですか？',
+                'shopping': '買い物は好きですか？',
+                'travel': '旅行に行きますか？どのようなタイプの旅？',
+                'movies': '映画や本は好きですか？ジャンルは？',
+                'music': '音楽は好きですか？何を聴きますか？',
+                'sns': 'SNSをよく使いますか？',
+                'games': 'ゲームをしますか？',
+                'eating': '食べることは好きですか？好物は？',
+                'sweets': '甘いものは好きですか？',
+                'alcohol': 'お酒は飲みますか？',
+                'latenight': '夜更かしをしますか？',
+                'earlysleep': '早寝するほうですか？'
+            },
+            '価値観・信念': {
+                'important': '人生で最も大切なことは何ですか？',
+                'friendship': '友情についてどう考えますか？',
+                'romance': '恋愛についてどう考えますか？',
+                'work': '仕事（学業）についてどう考えますか？',
+                'money': 'お金についてどう考えますか？',
+                'family': '家族についてどう考えますか？',
+                'success': '成功の定義は何ですか？',
+                'failure': '失敗についてどう考えますか？',
+                'justice': '社会正義についてどう考えますか？',
+                'rules': 'ルールについてどう考えますか？',
+                'effort': '努力についてどう考えますか？',
+                'happiness': '幸せの定義は何ですか？',
+                'relationships': '人間関係で大切なことは何ですか？',
+                'honesty2': '正直さについてどう考えますか？',
+                'responsibility': '責任についてどう考えますか？'
+            },
+            '好みと嫌悪': {
+                'dislikedFood': '嫌いな食べ物は何ですか？',
+                'dislikedPeople': '嫌いな人のタイプは？',
+                'dislikedSituation': '嫌いな状況は？',
+                'fears': '怖いことは何ですか？',
+                'stress': 'ストレスを感じるのはどんなときですか？',
+                'season': '好きな季節は？',
+                'weather': '好きな天気は？',
+                'timeOfDay': '好きな時間帯は？',
+                'place': '好きな場所は？',
+                'smell': '好きな匂いは？',
+                'color': '好きな色は？',
+                'dislikedColor': '嫌いな色は？',
+                'dislikedSound': '嫌いな音は？',
+                'admiration': '敬意を感じる人のタイプは？',
+                'lifelong': '一生かけてやりたいことは何ですか？'
+            }
         };
 
-        // タブ切り替え処理
+        let chatHistory = [];
+        let calendarEvents = [];
+        let todoList = [];
+
+        window.onload = function() {
+            loadSavedData();
+            buildQuestionsUI();
+            renderCalendar();
+            renderTodo();
+        };
+
+        // タブ切り替え
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
         }
 
-        // 設定の読み込み
-        function loadSavedSettings() {
-            const apiKey = localStorage.getItem('geminiApiKey') || '';
-            const modelName = localStorage.getItem('geminiModelName') || 'gemini-1.5-flash';
-            
-            document.getElementById('apiKeyInput').value = apiKey;
-            document.getElementById('modelNameInput').value = modelName;
+        // 保存データの読み込み
+        function loadSavedData() {
+            document.getElementById('apiKeyInput').value = localStorage.getItem('geminiApiKey') || '';
+            document.getElementById('modelNameInput').value = localStorage.getItem('geminiModelName') || 'gemini-2.5-flash';
+            document.getElementById('charNameInput').value = localStorage.getItem('geminiCharName') || 'エリザベス';
+            document.getElementById('welcomeCharName').innerText = localStorage.getItem('geminiCharName') || 'エリザベス';
 
-            const savedChar = localStorage.getItem('geminiCharFullSettings');
-            if (savedChar) {
-                try {
-                    const data = JSON.parse(savedChar);
-                    document.getElementById('charNameInput').value = data.name || 'エリザベス';
-                    document.getElementById('firstPersonInput').value = data.firstPerson || '私';
-                    document.getElementById('secondPersonInput').value = data.secondPerson || 'ご主人様';
-                    document.getElementById('charPersonalityInput').value = data.personality || '';
-                    document.getElementById('userNameInput').value = data.userName || '';
-                    document.getElementById('userNicknameInput').value = data.userNickname || '';
-                    document.getElementById('speechStyleInput').value = data.speechStyle || '丁寧';
-                    document.getElementById('speechCustomInput').value = data.speechCustom || '';
-                    document.getElementById('detailSettingsInput').value = JSON.stringify(data.detailSettings || {}, null, 2);
-                    
-                    document.getElementById('welcomeCharName').innerText = data.name || 'エリザベス';
-                } catch(e) {
-                    console.error("設定読み込みエラー", e);
+            calendarEvents = JSON.parse(localStorage.getItem('geminiCalendarEvents') || '[]');
+            todoList = JSON.parse(localStorage.getItem('geminiTodoList') || '[]');
+        }
+
+        // API設定の保存
+        function saveApiSettings() {
+            localStorage.setItem('geminiApiKey', document.getElementById('apiKeyInput').value.trim());
+            localStorage.setItem('geminiModelName', document.getElementById('modelNameInput').value.trim() || 'gemini-2.5-flash');
+            alert('API設定を保存いたしました。');
+        }
+
+        function saveBasicCharInfo() {
+            const name = document.getElementById('charNameInput').value.trim() || 'エリザベス';
+            localStorage.setItem('geminiCharName', name);
+            document.getElementById('welcomeCharName').innerText = name;
+        }
+
+        // 質問UIの自動構築
+        function buildQuestionsUI() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            const savedAnswers = JSON.parse(localStorage.getItem('geminiCharAnswers') || '{}');
+
+            for (const [catName, questions] of Object.entries(questionCategories)) {
+                const box = document.createElement('div');
+                box.className = 'cat-box';
+                
+                let html = `<h3>${catName}</h3><div class="q-grid">`;
+                for (const [qKey, qLabel] of Object.entries(questions)) {
+                    const val = savedAnswers[qKey] || '';
+                    html += `
+                        <div class="form-group">
+                            <label>${qLabel}</label>
+                            <input type="text" class="q-input" data-qkey="${qKey}" value="${escapeHtml(val)}" placeholder="未設定">
+                        </div>
+                    `;
                 }
+                html += `</div>`;
+                box.innerHTML = html;
+                container.appendChild(box);
             }
         }
 
-        // 設定の保存処理
-        function saveSettings() {
-            const apiKey = document.getElementById('apiKeyInput').value.trim();
-            const modelName = document.getElementById('modelNameInput').value.trim() || 'gemini-1.5-flash';
+        // 質問回答の保存
+        function saveAllQuestions() {
+            saveBasicCharInfo();
+            const inputs = document.querySelectorAll('.q-input');
+            const answers = {};
+            inputs.forEach(input => {
+                const key = input.getAttribute('data-qkey');
+                const val = input.value.trim();
+                if (val) answers[key] = val;
+            });
+            localStorage.setItem('geminiCharAnswers', JSON.stringify(answers));
+            alert('✨ 質問設定を保存し、AIに反映いたしましたわ！');
+        }
 
-            localStorage.setItem('geminiApiKey', apiKey);
-            localStorage.setItem('geminiModelName', modelName);
+        // --- カレンダー機能 ---
+        function addEvent() {
+            const title = document.getElementById('eventTitle').value.trim();
+            const date = document.getElementById('eventDate').value;
+            const time = document.getElementById('eventTime').value;
 
-            let detailJson = {};
-            try {
-                const jsonText = document.getElementById('detailSettingsInput').value.trim();
-                if (jsonText) {
-                    detailJson = JSON.parse(jsonText);
-                }
-            } catch (e) {
-                alert('⚠️ 詳細設定(JSON形式)の書き方に誤りがございます。正しいJSON形式で入力してください。');
+            if (!title || !date) return alert('タイトルと日付を入力してください。');
+
+            calendarEvents.push({ id: Date.now(), title, date, time });
+            calendarEvents.sort((a,b) => new Date(a.date + ' ' + (a.time||'00:00')) - new Date(b.date + ' ' + (b.time||'00:00')));
+            
+            localStorage.setItem('geminiCalendarEvents', JSON.stringify(calendarEvents));
+            renderCalendar();
+
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventDate').value = '';
+            document.getElementById('eventTime').value = '';
+        }
+
+        function deleteEvent(id) {
+            calendarEvents = calendarEvents.filter(e => e.id !== id);
+            localStorage.setItem('geminiCalendarEvents', JSON.stringify(calendarEvents));
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const list = document.getElementById('eventList');
+            list.innerHTML = '';
+            if (calendarEvents.length === 0) {
+                list.innerHTML = '<li style="color:#888; font-size:0.9rem;">予定はありません。</li>';
                 return;
             }
-
-            const charData = {
-                name: document.getElementById('charNameInput').value.trim(),
-                firstPerson: document.getElementById('firstPersonInput').value.trim(),
-                secondPerson: document.getElementById('secondPersonInput').value.trim(),
-                personality: document.getElementById('charPersonalityInput').value.trim(),
-                userName: document.getElementById('userNameInput').value.trim(),
-                userNickname: document.getElementById('userNicknameInput').value.trim(),
-                speechStyle: document.getElementById('speechStyleInput').value.trim(),
-                speechCustom: document.getElementById('speechCustomInput').value.trim(),
-                detailSettings: detailJson
-            };
-
-            localStorage.setItem('geminiCharFullSettings', JSON.stringify(charData));
-            document.getElementById('welcomeCharName').innerText = charData.name || 'エリザベス';
-
-            alert('✨ 設定を正常に保存いたしましたわ！');
+            calendarEvents.forEach(e => {
+                const li = document.createElement('li');
+                li.className = 'item-card';
+                li.innerHTML = `
+                    <div>
+                        <strong>📅 ${escapeHtml(e.date)} ${e.time ? escapeHtml(e.time) : ''}</strong>
+                        <div>${escapeHtml(e.title)}</div>
+                    </div>
+                    <button class="btn-danger" onclick="deleteEvent(${e.id})">削除</button>
+                `;
+                list.appendChild(li);
+            });
         }
 
-        // メッセージ送信処理
+        // --- ToDo機能 ---
+        function addTodo() {
+            const text = document.getElementById('todoInput').value.trim();
+            if (!text) return;
+
+            todoList.push({ id: Date.now(), text, completed: false });
+            localStorage.setItem('geminiTodoList', JSON.stringify(todoList));
+            renderTodo();
+            document.getElementById('todoInput').value = '';
+        }
+
+        function toggleTodo(id) {
+            const item = todoList.find(t => t.id === id);
+            if (item) item.completed = !item.completed;
+            localStorage.setItem('geminiTodoList', JSON.stringify(todoList));
+            renderTodo();
+        }
+
+        function deleteTodo(id) {
+            todoList = todoList.filter(t => t.id !== id);
+            localStorage.setItem('geminiTodoList', JSON.stringify(todoList));
+            renderTodo();
+        }
+
+        function renderTodo() {
+            const list = document.getElementById('todoList');
+            list.innerHTML = '';
+            if (todoList.length === 0) {
+                list.innerHTML = '<li style="color:#888; font-size:0.9rem;">タスクはありません。</li>';
+                return;
+            }
+            todoList.forEach(t => {
+                const li = document.createElement('li');
+                li.className = `item-card ${t.completed ? 'completed' : ''}`;
+                li.innerHTML = `
+                    <div style="cursor:pointer;" onclick="toggleTodo(${t.id})">
+                        <input type="checkbox" ${t.completed ? 'checked' : ''}>
+                        <span>${escapeHtml(t.text)}</span>
+                    </div>
+                    <button class="btn-danger" onclick="deleteTodo(${t.id})">削除</button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        // --- AI通信 & チャット処理 ---
         async function sendMessage() {
             const inputEl = document.getElementById('userInput');
             const text = inputEl.value.trim();
             if (!text) return;
 
-            // ユーザーメッセージ描画
+            const charName = localStorage.getItem('geminiCharName') || 'エリザベス';
             appendMessage('user', 'あなた', text);
             inputEl.value = '';
 
-            // 一時的な「応答作成中...」メッセージを表示
-            const charName = document.getElementById('charNameInput').value.trim() || 'AI';
             const loadingId = appendLoadingMessage(charName);
 
             try {
-                // API呼び出し
                 const reply = await callGeminiAPI(text);
                 removeMessage(loadingId);
-                
-                // AIからの返答描画
                 appendMessage('model', charName, reply);
 
-                // 履歴管理
                 chatHistory.push({ role: 'user', content: text });
                 chatHistory.push({ role: 'model', content: reply });
             } catch (err) {
                 removeMessage(loadingId);
-                appendMessage('model', 'システム', `⚠️ 処理中にエラーが発生いたしました:\n${err.message}`);
+                appendMessage('model', 'システム', `⚠️ エラーが発生いたしました:\n${err.message}`);
             }
         }
 
-        // チャット画面へのメッセージ追加
         function appendMessage(sender, name, text) {
             const chatBox = document.getElementById('chatBox');
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${sender === 'user' ? 'user-msg' : 'model-msg'}`;
-            
-            const headerDiv = document.createElement('div');
-            headerDiv.className = 'msg-header';
-            headerDiv.innerText = name;
-
-            const textDiv = document.createElement('div');
-            textDiv.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
-
-            msgDiv.appendChild(headerDiv);
-            msgDiv.appendChild(textDiv);
+            msgDiv.innerHTML = `<div class="msg-header">${escapeHtml(name)}</div><div>${escapeHtml(text).replace(/\n/g, '<br>')}</div>`;
             chatBox.appendChild(msgDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // ローディング用表示
         function appendLoadingMessage(name) {
             const chatBox = document.getElementById('chatBox');
             const msgDiv = document.createElement('div');
             const id = 'loading-' + Date.now();
             msgDiv.id = id;
             msgDiv.className = 'message model-msg loading-dots';
-            msgDiv.innerText = `${name}が応答を作成中...`;
+            msgDiv.innerText = `${name}が考えています...`;
             chatBox.appendChild(msgDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
             return id;
@@ -498,45 +720,52 @@
             });
         }
 
-        // Gemini API通信コア処理
+        // システムプロンプト生成（質問設定・カレンダー・ToDoを自動挿入）
+        function buildSystemPrompt() {
+            const charName = localStorage.getItem('geminiCharName') || 'エリザベス';
+            const savedAnswers = JSON.parse(localStorage.getItem('geminiCharAnswers') || '{}');
+
+            let rpSettings = '';
+            for (const [catName, questions] of Object.entries(questionCategories)) {
+                let catDetails = [];
+                for (const [qKey, qLabel] of Object.entries(questions)) {
+                    if (savedAnswers[qKey]) {
+                        catDetails.push(`・${qLabel} → ${savedAnswers[qKey]}`);
+                    }
+                }
+                if (catDetails.length > 0) {
+                    rpSettings += `\n【${catName}】\n` + catDetails.join('\n');
+                }
+            }
+
+            // カレンダーとToDoの現在状態を共有
+            const upcomingEvents = calendarEvents.map(e => `${e.date} ${e.time||''}: ${e.title}`).join(' / ');
+            const pendingTodos = todoList.filter(t => !t.completed).map(t => t.text).join(' / ');
+
+            return `あなたは${charName}というキャラクターです。
+
+以下はあなた（${charName}）の背景設定・属性・回答設定です。これらの性格・口調・価値観を徹底的に反映して対話し、なりきってください：
+${rpSettings || '（特別なプロファイル未設定）'}
+
+【現在の共有情報】
+・登録されている予定: ${upcomingEvents || 'なし'}
+・未完了のToDo: ${pendingTodos || 'なし'}
+
+ユーザーからの問いかけに対し、必要に応じてカレンダーの予定やToDoにも触れつつ、上記キャラクターとして自然で魅力的な返答をしてください。`;
+        }
+
         async function callGeminiAPI(userMessage) {
             const apiKey = localStorage.getItem('geminiApiKey');
             if (!apiKey) {
-                return 'Gemini APIキーが設定されていません。「基本・接続設定」タブからキーを入力・保存してくださいませ。';
+                return 'Gemini APIキーが設定されていません。「API設定」タブでキーを入力・保存してくださいませ。';
             }
 
-            const modelName = localStorage.getItem('geminiModelName') || 'gemini-1.5-flash';
-
-            // 各種キャラクター設定の組み立て
-            const charName = document.getElementById('charNameInput').value.trim() || 'AI';
-            const firstPerson = document.getElementById('firstPersonInput').value.trim();
-            const secondPerson = document.getElementById('secondPersonInput').value.trim();
-            const personality = document.getElementById('charPersonalityInput').value.trim();
-            const userName = document.getElementById('userNameInput').value.trim();
-            const userNickname = document.getElementById('userNicknameInput').value.trim();
-            const speechStyle = document.getElementById('speechStyleInput').value.trim();
-            const speechCustom = document.getElementById('speechCustomInput').value.trim();
-
-            let detailSettings = {};
-            try {
-                const jsonText = document.getElementById('detailSettingsInput').value.trim();
-                if (jsonText) detailSettings = JSON.parse(jsonText);
-            } catch(e) {}
-
-            const userCall = userName ? `${userName}${userNickname}` : secondPerson;
-
-            const systemPrompt = `あなたは${charName}というキャラクターです。
-性格・設定: ${personality}
-一人称: ${firstPerson}
-ユーザーの呼び方: ${userCall}
-口調スタイル: ${speechStyle}
-${speechCustom ? `語尾・特徴: ${speechCustom}` : ''}
-詳細設定: ${JSON.stringify(detailSettings)}
-この設定を厳格に守り、魅力的なキャラクターとして会話してください。`;
+            const modelName = localStorage.getItem('geminiModelName') || 'gemini-2.5-flash';
+            const systemPrompt = buildSystemPrompt();
 
             const contents = [
-                { role: 'user', parts: [{ text: `[システム設定]\n${systemPrompt}` }] },
-                { role: 'model', parts: [{ text: `了解いたしました。私は${charName}として振る舞います。` }] }
+                { role: 'user', parts: [{ text: `[システム指定・キャラクタープロファイル]\n${systemPrompt}` }] },
+                { role: 'model', parts: [{ text: `了解いたしました。プロファイルに基づき完璧になりきってお話しいたします。` }] }
             ];
 
             chatHistory.slice(-6).forEach(msg => {
@@ -556,18 +785,14 @@ ${speechCustom ? `語尾・特徴: ${speechCustom}` : ''}
 
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
-                if (response.status === 429 || errData.error?.message?.includes('Quota exceeded')) {
-                    return '⚠️ 無料枠の送信回数制限に達しました。約1分間待ってから再度送信してくださいませ。';
-                }
                 return `APIエラー (${response.status}): ${errData.error?.message || '通信に失敗いたしました'}`;
             }
 
             const data = await response.json();
-            
             if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
                 return data.candidates[0].content.parts[0].text;
             } else {
-                return '⚠️ APIからの応答形式が予期しないものでした。';
+                return '⚠️ 応答メッセージを取得できませんでした。';
             }
         }
     </script>
