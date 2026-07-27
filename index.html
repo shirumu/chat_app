@@ -640,6 +640,37 @@
             margin: 15px 0;
         }
 
+        .speech-style-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .speech-option {
+            padding: 10px;
+            border: 2px solid var(--accent-lighter);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--text-dark);
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .speech-option.selected {
+            background: var(--primary-main);
+            color: white;
+            border-color: var(--primary-main);
+        }
+
+        .speech-option:hover {
+            background: var(--accent-light);
+            color: white;
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -697,6 +728,10 @@
 
             .color-options {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .speech-style-options {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -808,6 +843,7 @@
 
             <div class="category-tabs">
                 <button class="category-tab active" onclick="switchAdvancedTab('pronouns')">人称設定</button>
+                <button class="category-tab" onclick="switchAdvancedTab('speech')">会話スタイル</button>
                 <button class="category-tab" onclick="switchAdvancedTab('relations')">人物関係</button>
                 <button class="category-tab" onclick="switchAdvancedTab('theme')">テーマ変更</button>
             </div>
@@ -859,6 +895,32 @@
                         maxlength="20"
                     >
                     <small style="color: #558b2f; font-size: 10px;">設定した名前で呼びかけます</small>
+                </div>
+            </div>
+
+            <!-- 会話スタイル設定 -->
+            <div id="speech-tab" class="question-group">
+                <div class="question-item">
+                    <div class="question-text">会話スタイルを選択</div>
+                    <div class="speech-style-options">
+                        <div class="speech-option selected" onclick="selectSpeechStyle('standard')" data-style="standard">標準敬語</div>
+                        <div class="speech-option" onclick="selectSpeechStyle('casual')" data-style="casual">カジュアル</div>
+                        <div class="speech-option" onclick="selectSpeechStyle('kansai')" data-style="kansai">関西弁</div>
+                        <div class="speech-option" onclick="selectSpeechStyle('ojousama')" data-style="ojousama">お嬢様言葉</div>
+                        <div class="speech-option" onclick="selectSpeechStyle('boyish')" data-style="boyish">ボーイッシュ</div>
+                        <div class="speech-option" onclick="selectSpeechStyle('gentle')" data-style="gentle">柔和</div>
+                    </div>
+                    <small style="color: #558b2f; font-size: 10px; display: block; margin-top: 10px;">選択したスタイルでボットが話します</small>
+                </div>
+
+                <div class="question-item">
+                    <div class="question-text">会話スタイルの詳細設定（任意）</div>
+                    <textarea 
+                        id="speechCustom" 
+                        placeholder="例：語尾に『～ですわよ』をよく使う、『ね』『な』をよく付ける..."
+                        style="resize: vertical; min-height: 60px;"
+                    ></textarea>
+                    <small style="color: #558b2f; font-size: 10px;">さらに細かく設定したい場合</small>
                 </div>
             </div>
 
@@ -967,9 +1029,75 @@
             partnerInfo: '',
             colleguesInfo: '',
             otherRelations: '',
+            speechStyle: 'standard',
+            speechCustom: '',
             theme: 'green'
         };
         let chatHistory = [];
+
+        // 会話スタイル定義
+        const speechStyles = {
+            standard: {
+                name: '標準敬語',
+                description: '丁寧で敬意のある話し方',
+                examples: [
+                    'そうなんですね。',
+                    'そのようなお考えなんですね。',
+                    'かしこまりました。',
+                    '了解です。'
+                ]
+            },
+            casual: {
+                name: 'カジュアル',
+                description: 'フレンドリーでくだけた話し方',
+                examples: [
+                    'そっか、そっか。',
+                    'いいね、それ！',
+                    'わかったよ。',
+                    'そんな感じ？'
+                ]
+            },
+            kansai: {
+                name: '関西弁',
+                description: '関西の温かみのある話し方',
+                examples: [
+                    'そっか、そっかぁ。',
+                    'あかんな、それ。',
+                    'えぇ、まじで？',
+                    'よろしゅうお願いしますわ。'
+                ]
+            },
+            ojousama: {
+                name: 'お嬢様言葉',
+                description: '上品で気品のある話し方',
+                examples: [
+                    'そうですわね。',
+                    'あらあら、まあ。',
+                    'ですわよ。',
+                    'いかがですの？'
+                ]
+            },
+            boyish: {
+                name: 'ボーイッシュ',
+                description: 'ボーイッシュで元気な話し方',
+                examples: [
+                    'そっか、なるほど。',
+                    'よし、了解だ！',
+                    'いいね、頑張ろう。',
+                    'そういうのってさ。'
+                ]
+            },
+            gentle: {
+                name: '柔和',
+                description: '穏やかで優しい話し方',
+                examples: [
+                    'そうですね、そのように思われますか。',
+                    'ふむふむ、なるほど。',
+                    'そうですね…',
+                    'いいですね、素敵です。'
+                ]
+            }
+        };
 
         // カラーテーマ定義
         const themeColors = {
@@ -1157,6 +1285,199 @@
             }
         };
 
+        // AIベースの会話エンジン
+        const conversationEngine = {
+            topics: [
+                { keywords: ['天気', '天候', 'weather'], responses: ['天気', 'topic_weather'] },
+                { keywords: ['好き', 'like', 'love'], responses: ['好みについて', 'topic_preference'] },
+                { keywords: ['仕事', '仕事', 'work', 'job'], responses: ['仕事について', 'topic_work'] },
+                { keywords: ['休日', 'weekend', 'day off'], responses: ['休日について', 'topic_weekend'] },
+                { keywords: ['趣味', 'hobby', 'hobbies'], responses: ['趣味について', 'topic_hobby'] },
+                { keywords: ['映画', '映画', 'movie', 'film'], responses: ['映画について', 'topic_movie'] },
+                { keywords: ['音楽', 'music'], responses: ['音楽について', 'topic_music'] },
+                { keywords: ['食べ物', 'food', '食事'], responses: ['食べ物について', 'topic_food'] },
+                { keywords: ['旅行', 'travel', 'trip'], responses: ['旅行について', 'topic_travel'] },
+                { keywords: ['友達', '友人', 'friend'], responses: ['友人について', 'topic_friend'] },
+                { keywords: ['家族', 'family'], responses: ['家族について', 'topic_family'] },
+                { keywords: ['恋愛', 'love', '恋人'], responses: ['恋愛について', 'topic_romance'] },
+                { keywords: ['勉強', 'study', 'learning'], responses: ['勉強について', 'topic_study'] },
+                { keywords: ['ストレス', 'stress'], responses: ['ストレスについて', 'topic_stress'] },
+                { keywords: ['夢', 'dream', 'goal'], responses: ['夢について', 'topic_dream'] }
+            ],
+
+            generateResponse: function(userMessage, context) {
+                const responses = [];
+                
+                // 共感と反響
+                responses.push(this.generateEmpathy(userMessage, context));
+                
+                // 話題の展開
+                if (Math.random() > 0.3) {
+                    responses.push(this.generateFollowUp(userMessage, context));
+                }
+                
+                // 質問
+                if (Math.random() > 0.5) {
+                    responses.push(this.generateQuestion(userMessage, context));
+                }
+                
+                return responses.filter(r => r).join(' ');
+            },
+
+            generateEmpathy: function(message, context) {
+                const empathyPhrases = {
+                    standard: [
+                        'そうなんですね、',
+                        'そのようなお考えなんですね、',
+                        'かしこまりました、',
+                        'なるほど、',
+                        'そうですか、'
+                    ],
+                    casual: [
+                        'そっか、',
+                        'いいね、',
+                        'わかったよ、',
+                        'あ、そっか、',
+                        'なるほど、'
+                    ],
+                    kansai: [
+                        'ほんなら、',
+                        'あかんな、',
+                        'えぇ、ほんま？',
+                        'そっか、そっか、',
+                        'あぁ、なるほどな、'
+                    ],
+                    ojousama: [
+                        'そうですわね、',
+                        'あらあら、',
+                        'ですわね、',
+                        'いかがですの？',
+                        'そのようでしたか、'
+                    ],
+                    boyish: [
+                        'そっか、なるほど、',
+                        'よし、',
+                        'わかった、',
+                        'そっか、',
+                        'いいね、'
+                    ],
+                    gentle: [
+                        'そうですね、',
+                        'ふむふむ、',
+                        'そのようにお感じなのですね、',
+                        'なるほど、',
+                        'いいですね、'
+                    ]
+                };
+
+                const style = context.speechStyle || 'standard';
+                const phrases = empathyPhrases[style] || empathyPhrases.standard;
+                return phrases[Math.floor(Math.random() * phrases.length)];
+            },
+
+            generateFollowUp: function(message, context) {
+                const followUpPhrases = {
+                    standard: [
+                        'そのあたりについて、詳しくお聞きしたいです。',
+                        'もっと詳しくお話いただけますか？',
+                        'その時のお気持ちはいかがでしたか？',
+                        'そうした経験は大切ですね。',
+                        'そのようなことは素敵ですね。'
+                    ],
+                    casual: [
+                        'へー、それいいね。',
+                        'あ、そっか、そういう感じなんだ。',
+                        'まじで？',
+                        'あ、分かる分かる。',
+                        'いいね、それって。'
+                    ],
+                    kansai: [
+                        'ほんまにな。',
+                        'あ、分かるわ、それ。',
+                        'ええやん、それ。',
+                        'そっか、そっか。',
+                        'あ、あるある。'
+                    ],
+                    ojousama: [
+                        'ですわね、その通り。',
+                        'あら、素敵。',
+                        'いかにも、ですね。',
+                        'うーん、それはいいですわ。',
+                        'そのようにお考えでしたか。'
+                    ],
+                    boyish: [
+                        'あ、そっか、そっか。',
+                        'いいね、その考え。',
+                        'よく分かるよ。',
+                        'あ、あるある。',
+                        'わかったよ。'
+                    ],
+                    gentle: [
+                        'いいですね、その考え。',
+                        'そうなんですね、素敵です。',
+                        'そのようにお感じなのですね。',
+                        'うーん、いいですね。',
+                        'そういうのもいいですね。'
+                    ]
+                };
+
+                const style = context.speechStyle || 'standard';
+                const phrases = followUpPhrases[style] || followUpPhrases.standard;
+                return phrases[Math.floor(Math.random() * phrases.length)];
+            },
+
+            generateQuestion: function(message, context) {
+                const questionPhrases = {
+                    standard: [
+                        'ところで、' + context.userCall + 'はいかがですか？',
+                        context.userCall + 'はどのようにお考えですか？',
+                        'そのあたりについて、' + context.userCall + 'のご意見をお聞きしたいです。',
+                        context.userCall + 'の経験はいかがでしたか？',
+                        '少しお聞きしてもよろしいですか？'
+                    ],
+                    casual: [
+                        'ところで、' + context.userCall + 'はどう？',
+                        context.userCall + 'はどう思う？',
+                        '実際の��ころ、どう？',
+                        'ちなみに、' + context.userCall + 'は？',
+                        'あ、そういえば、どう？'
+                    ],
+                    kansai: [
+                        'ところで、' + context.userCall + 'はどない？',
+                        context.userCall + 'はどう思う？',
+                        'あ、そういえば、どやった？',
+                        'ちなみに、' + context.userCall + 'は？',
+                        'へぇ、でもさ、どう？'
+                    ],
+                    ojousama: [
+                        'ところで、' + context.userCall + 'はいかがですの？',
+                        context.userCall + 'のご意見をお伺いしたいのですが。',
+                        'さて、' + context.userCall + 'はどのようなご経験が？',
+                        'あ、ところで、' + context.userCall + 'は？',
+                        'いかがですの？'
+                    ],
+                    boyish: [
+                        'ところで、' + context.userCall + 'はどう？',
+                        context.userCall + 'はどう思う？',
+                        'あ、そっか、' + context.userCall + 'は？',
+                        '実は、' + context.userCall + 'ってどう思ってる？',
+                        'ちなみに、どう？'
+                    ],
+                    gentle: [
+                        'ところで、' + context.userCall + 'はいかがですか？',
+                        context.userCall + 'のご経験はありますか？',
+                        'そのあたりについて、' + context.userCall + 'はどのようなご意見を？',
+                        'あ、そういえば、' + context.userCall + 'は？',
+                        'いかがですか？'
+                    ]
+                };
+
+                const style = context.speechStyle || 'standard';
+                const phrases = questionPhrases[style] || questionPhrases.standard;
+                return phrases[Math.floor(Math.random() * phrases.length)];
+            }
+        };
+
         // 初期化
         function init() {
             loadSettings();
@@ -1182,14 +1503,22 @@
         function selectTheme(themeName) {
             advancedSettings.theme = themeName;
             
-            // ボタンの選択状態を更新
             document.querySelectorAll('.color-option').forEach(option => {
                 option.classList.remove('selected');
             });
             event.target.closest('.color-option').classList.add('selected');
             
-            // テーマを即座に適用
             applyTheme(themeName);
+        }
+
+        // 会話スタイル選択
+        function selectSpeechStyle(styleName) {
+            advancedSettings.speechStyle = styleName;
+            
+            document.querySelectorAll('.speech-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            event.target.closest('.speech-option').classList.add('selected');
         }
 
         // カテゴリータブ初期化
@@ -1298,7 +1627,6 @@
         function openAdvancedModal() {
             const modal = document.getElementById('advancedModal');
             
-            // 現在の設定値を反映
             document.getElementById('firstPerson').value = advancedSettings.firstPerson;
             document.getElementById('secondPerson').value = advancedSettings.secondPerson;
             document.getElementById('userNickname').value = advancedSettings.userNickname;
@@ -1308,8 +1636,17 @@
             document.getElementById('partnerInfo').value = advancedSettings.partnerInfo;
             document.getElementById('colleguesInfo').value = advancedSettings.colleguesInfo;
             document.getElementById('otherRelations').value = advancedSettings.otherRelations;
+            document.getElementById('speechCustom').value = advancedSettings.speechCustom;
 
-            // テーマボタンの選択状態を更新
+            // 会話スタイルボタン
+            document.querySelectorAll('.speech-option').forEach(option => {
+                option.classList.remove('selected');
+                if (option.getAttribute('data-style') === advancedSettings.speechStyle) {
+                    option.classList.add('selected');
+                }
+            });
+
+            // テーマボタン
             document.querySelectorAll('.color-option').forEach(option => {
                 option.classList.remove('selected');
             });
@@ -1352,6 +1689,7 @@
             advancedSettings.partnerInfo = document.getElementById('partnerInfo').value.trim();
             advancedSettings.colleguesInfo = document.getElementById('colleguesInfo').value.trim();
             advancedSettings.otherRelations = document.getElementById('otherRelations').value.trim();
+            advancedSettings.speechCustom = document.getElementById('speechCustom').value.trim();
 
             localStorage.setItem('advancedSettings', JSON.stringify(advancedSettings));
             closeAdvancedModal();
@@ -1359,7 +1697,8 @@
             const displayName = advancedSettings.userName 
                 ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
                 : 'ユーザー';
-            addBotMessage(`会話スタイルを更新しました！これからは一人称を「${advancedSettings.firstPerson}」、${displayName}のことを「${advancedSettings.userName || ''}${advancedSettings.userNickname}」と呼びます。`);
+            const styleName = speechStyles[advancedSettings.speechStyle]?.name || '標準敬語';
+            addBotMessage(`会話スタイルを更新しました！これからは${styleName}で、${displayName}と話させていただきます。`);
         }
 
         // カレンダーレンダリング
@@ -1559,7 +1898,7 @@
                 const botResponse = generateBotResponse(message);
                 addBotMessage(botResponse);
                 checkReminders();
-            }, 500);
+            }, 300 + Math.random() * 700);
         }
 
         // ユーザーメッセージ追加
@@ -1594,7 +1933,7 @@
             chatHistory.push({ role: 'bot', content: text });
         }
 
-        // ボット返答生成
+        // ボット返答生成（改善版）
         function generateBotResponse(userMessage) {
             const lowerMessage = userMessage.toLowerCase();
             const userName = advancedSettings.userName || 'あなた';
@@ -1602,75 +1941,57 @@
                 ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
                 : advancedSettings.secondPerson;
 
-            // キーワードベースの回答
-            const responses = {
-                'こんにちは': `こんにちは！${advancedSettings.firstPerson}は${characterName}です。${userCall}、何かお手伝いできることがあれば、お気軽にお聞きください。`,
-                'こんばんは': `こんばんは！${advancedSettings.firstPerson}は${characterName}です。${userCall}、お疲れさまです。`,
-                'おはよう': `おはようございます！${advancedSettings.firstPerson}は${characterName}です。${userCall}、今日も頑張りましょう！`,
-                '元気': `ありがとうございます。お陰様で元気です。${advancedSettings.firstPerson}はいつも前向きに過���しています。`,
-                'ありがとう': `こちらこそ、ありがとうございます。${userCall}のお役に立てて嬉しいです。`,
-                'すみません': `いえいえ、大丈夫です。${userCall}が何かお困りのことがあれば、いつでもお聞きください。`,
-                'カレンダー': `カレンダーはサイドバーにあります。日付をクリックして、予定を追加してください。`,
-                '予定': `右側のカレンダーで予定を管理できます。タイトルと時間、リマインド時間を設定してください。`,
-                '詳細設定': `詳細設定では、${advancedSettings.firstPerson}の性格や特徴を100個の質問から選んで設定できます。より深い${characterName}になります。`,
-                '会話スタイル': `会話スタイル設定では、${advancedSettings.firstPerson}が${userCall}のことをどう呼ぶかを設定できます。`,
+            // コンテキスト情報
+            const context = {
+                firstPerson: advancedSettings.firstPerson,
+                secondPerson: advancedSettings.secondPerson,
+                userCall: userCall,
+                userName: userName,
+                speechStyle: advancedSettings.speechStyle,
+                personality: characterPersonality,
+                characterName: characterName
             };
 
-            for (const [key, response] of Object.entries(responses)) {
-                if (lowerMessage.includes(key)) {
-                    return response;
-                }
+            // AIエンジンで返答生成
+            let response = conversationEngine.generateResponse(userMessage, context);
+
+            // 会話スタイルを適用
+            response = applySpeechStyle(response, context);
+
+            return response;
+        }
+
+        // 会話スタイル適用
+        function applySpeechStyle(text, context) {
+            const custom = advancedSettings.speechCustom;
+            const style = context.speechStyle || 'standard';
+
+            switch(style) {
+                case 'kansai':
+                    text = text.replace(/ね$/gm, 'な');
+                    text = text.replace(/です$/gm, 'だわ');
+                    text = text.replace(/ます$/gm, 'ます');
+                    break;
+                case 'ojousama':
+                    text = text.replace(/ね$/gm, 'ですわね');
+                    text = text.replace(/です$/gm, 'ですわ');
+                    text = text.replace(/ません$/gm, 'ませんわ');
+                    break;
+                case 'casual':
+                    text = text.replace(/です$/gm, 'よ');
+                    text = text.replace(/ます$/gm, 'う');
+                    break;
+                case 'boyish':
+                    text = text.replace(/ね$/gm, 'な');
+                    text = text.replace(/です$/gm, 'だ');
+                    break;
+                case 'gentle':
+                    text = text.replace(/ね$/gm, 'ね');
+                    // 柔和は基本そのまま
+                    break;
             }
 
-            // 家族の話題
-            if (lowerMessage.includes('家族') || lowerMessage.includes('親')) {
-                if (advancedSettings.familyInfo) {
-                    return `${advancedSettings.firstPerson}の家族について...${advancedSettings.familyInfo}ですね。${userCall}のご家族はいかがですか？`;
-                }
-            }
-
-            // 友人の話題
-            if (lowerMessage.includes('友人') || lowerMessage.includes('友達')) {
-                if (advancedSettings.friendsInfo) {
-                    return `${advancedSettings.firstPerson}の友人について...${advancedSettings.friendsInfo}ですね。${userCall}はどうですか？`;
-                }
-            }
-
-            // 恋愛の話題
-            if (lowerMessage.includes('恋人') || lowerMessage.includes('彼氏') || lowerMessage.includes('彼女')) {
-                if (advancedSettings.partnerInfo) {
-                    return `${advancedSettings.firstPerson}の恋愛について...${advancedSettings.partnerInfo}ですね。${userCall}のプライベートはいかがですか？`;
-                }
-            }
-
-            // 職場の話題
-            if (lowerMessage.includes('同僚') || lowerMessage.includes('上司')) {
-                if (advancedSettings.colleguesInfo) {
-                    return `${advancedSettings.firstPerson}の職場について...${advancedSettings.colleguesInfo}ですね。${userCall}の職場環境はいかがですか？`;
-                }
-            }
-
-            // 詳細設定に基づく返答
-            if (Object.keys(detailSettings).length > 0) {
-                const detailHints = [
-                    `そうですか。${advancedSettings.firstPerson}もそうですね。`,
-                    `そのようなお考えなんですね。${advancedSettings.firstPerson}も共感します。`,
-                    `了解です。${advancedSettings.firstPerson}はいつも${userCall}をサポートする準備ができています。`,
-                    `そうなんですね。${advancedSettings.firstPerson}も一緒に考えてみたいと思います。`,
-                ];
-                return detailHints[Math.floor(Math.random() * detailHints.length)];
-            }
-
-            // デフォルト応答
-            const defaultResponses = [
-                `${advancedSettings.firstPerson}ですが、そうなんですね。${userCall}、詳しく聞かせていただけますか？`,
-                `そうですか。${advancedSettings.firstPerson}も${userCall}と一緒に考えてみたいと思います。`,
-                `${advancedSettings.firstPerson}も同感です。${userCall}、何かお手伝いできることはありますか？`,
-                `了解です。${advancedSettings.firstPerson}は常に${userCall}をサポートする準備ができています。`,
-                `そのようなお考えなんですね。${advancedSettings.firstPerson}は${userCall}の考えを参考にさせていただきます。`,
-            ];
-
-            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+            return text;
         }
 
         // リマインダーチェック
@@ -1726,6 +2047,7 @@
                 const userCall = advancedSettings.userName 
                     ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
                     : advancedSettings.secondPerson;
+                const greeting = conversationEngine.generateEmpathy('', {});
                 addBotMessage(`こんにちは！${advancedSettings.firstPerson}は${characterName}です。${userCall}、何かお手伝いできることはありますか？`);
             }, 500);
 
