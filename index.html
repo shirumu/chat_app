@@ -863,18 +863,18 @@
             localStorage.setItem('geminiApiKey', key);
         }
 
-        // Gemini API呼び出し（最新の gemini-2.0-flash を使用）
-        async function callGeminiAPI(userMessage) {
-            const apiKey = localStorage.getItem('geminiApiKey');
-            if (!apiKey) {
-                return 'Gemini APIキーが設定されていません。サイドバーに入力してください。';
-            }
+        // Gemini API呼び出し（レートリミット時の親切なエラー表示に対応）
+async function callGeminiAPI(userMessage) {
+    const apiKey = localStorage.getItem('geminiApiKey');
+    if (!apiKey) {
+        return 'Gemini APIキーが設定されていません。サイドバーに入力してください。';
+    }
 
-            const userCall = advancedSettings.userName 
-                ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
-                : advancedSettings.secondPerson;
+    const userCall = advancedSettings.userName 
+        ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
+        : advancedSettings.secondPerson;
 
-            const systemPrompt = `あなたは${characterName}というキャラクターです。
+    const systemPrompt = `あなたは${characterName}というキャラクターです。
 性格: ${characterPersonality}
 一人称: ${advancedSettings.firstPerson}
 ユーザーの呼び方: ${userCall}
@@ -883,39 +883,45 @@ ${advancedSettings.speechCustom ? `語尾等の特徴: ${advancedSettings.speech
 詳細設定: ${JSON.stringify(detailSettings)}
 このキャラクターとして、親しく会話してください。`;
 
-            const contents = [
-                { role: 'user', parts: [{ text: `[システム設定]\n${systemPrompt}` }] },
-                { role: 'model', parts: [{ text: `了解しました。私は${characterName}として振る舞います。` }] }
-            ];
+    const contents = [
+        { role: 'user', parts: [{ text: `[システム設定]\n${systemPrompt}` }] },
+        { role: 'model', parts: [{ text: `了解しました。私は${characterName}として振る舞います。` }] }
+    ];
 
-            chatHistory.slice(-6).forEach(msg => {
-                contents.push({
-                    role: msg.role === 'user' ? 'user' : 'model',
-                    parts: [{ text: msg.content }]
-                });
-            });
+    chatHistory.slice(-6).forEach(msg => {
+        contents.push({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }]
+        });
+    });
 
-            contents.push({ role: 'user', parts: [{ text: userMessage }] });
+    contents.push({ role: 'user', parts: [{ text: userMessage }] });
 
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents })
-                });
+    try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents })
+        });
 
-                if (!res.ok) {
-                    const err = await res.json();
-                    return `APIエラー: ${err.error?.message || 'エラーが発生しました'}`;
-                }
-
-                const data = await res.json();
-                return data.candidates[0].content.parts[0].text;
-            } catch (e) {
-                console.error(e);
-                return '通信エラーが発生しました。接続またはAPIキーを確認してください。';
+        if (!res.ok) {
+            const err = await res.json();
+            
+            // レートリミット（429エラー）発生時の分かりやすい案内
+            if (res.status === 429 || err.error?.message?.includes('Quota exceeded')) {
+                return '⚠️ 無料枠の送信回数制限に達しました。約1分間待ってから再度メッセージを送信してください。';
             }
+            
+            return `APIエラー: ${err.error?.message || 'エラーが発生しました'}`;
         }
+
+        const data = await res.json();
+        return data.candidates[0].content.parts[0].text;
+    } catch (e) {
+        console.error(e);
+        return '通信エラーが発生しました。接続またはAPIキーを確認してください。';
+    }
+}
 
         // 簡易ローカルAI
         function generateLocalResponse(userMessage) {
