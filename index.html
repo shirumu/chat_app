@@ -80,6 +80,9 @@
         <label>APIキー:</label>
         <input type="password" id="apiKeyInput" placeholder="Gemini APIキーを入力" onchange="saveApiKey()">
 
+        <label>使用モデル名:</label>
+        <input type="text" id="modelNameInput" value="gemini-1.5-flash" placeholder="例: gemini-1.5-flash">
+
         <label>キャラクター名:</label>
         <input type="text" id="charNameInput" value="エリザベス" placeholder="例: エリザベス">
 
@@ -109,6 +112,7 @@
         let chatHistory = [];
         let characterName = "エリザベス";
         let characterPersonality = "丁寧で上品なメイド。〜ですわ、〜ございますなどの口調。";
+        let modelName = "gemini-1.5-flash";
         let advancedSettings = {
             firstPerson: "私",
             secondPerson: "ご主人様",
@@ -134,11 +138,13 @@
                     characterPersonality = parsed.personality || characterPersonality;
                     advancedSettings.firstPerson = parsed.firstPerson || advancedSettings.firstPerson;
                     advancedSettings.secondPerson = parsed.secondPerson || advancedSettings.secondPerson;
+                    modelName = parsed.modelName || modelName;
                     
                     document.getElementById('charNameInput').value = characterName;
                     document.getElementById('charPersonalityInput').value = characterPersonality;
                     document.getElementById('firstPersonInput').value = advancedSettings.firstPerson;
                     document.getElementById('secondPersonInput').value = advancedSettings.secondPerson;
+                    document.getElementById('modelNameInput').value = modelName;
                 } catch(e) {
                     console.error("設定の読み込みに失敗しました", e);
                 }
@@ -152,22 +158,24 @@
             alert('APIキーを保存いたしました。');
         }
 
-        // キャラクター設定保存処理
+        // キャラクター・モデル設定保存処理
         function saveCharacter() {
             characterName = document.getElementById('charNameInput').value.trim();
             characterPersonality = document.getElementById('charPersonalityInput').value.trim();
             advancedSettings.firstPerson = document.getElementById('firstPersonInput').value.trim();
             advancedSettings.secondPerson = document.getElementById('secondPersonInput').value.trim();
+            modelName = document.getElementById('modelNameInput').value.trim() || "gemini-1.5-flash";
 
             const settingsToSave = {
                 name: characterName,
                 personality: characterPersonality,
                 firstPerson: advancedSettings.firstPerson,
-                secondPerson: advancedSettings.secondPerson
+                secondPerson: advancedSettings.secondPerson,
+                modelName: modelName
             };
 
             localStorage.setItem('geminiCharSettings', JSON.stringify(settingsToSave));
-            alert('キャラクター設定を保存いたしましたわ！');
+            alert('設定を保存いたしましたわ！');
         }
 
         // メッセージ送信処理
@@ -213,6 +221,8 @@
                 return 'Gemini APIキーが設定されていません。上の設定欄に入力して保存してください。';
             }
 
+            const currentModel = document.getElementById('modelNameInput').value.trim() || 'gemini-1.5-flash';
+
             const userCall = advancedSettings.userName 
                 ? `${advancedSettings.userName}${advancedSettings.userNickname}` 
                 : advancedSettings.secondPerson;
@@ -241,8 +251,8 @@ ${advancedSettings.speechCustom ? `語尾等の特徴: ${advancedSettings.speech
             contents.push({ role: 'user', parts: [{ text: userMessage }] });
 
             try {
-                // 現在安定して動作する「gemini-2.5-flash」モデルを使用しております
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                // 設定欄で指定されたモデル名を使用して通信を行います
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents })
